@@ -406,7 +406,7 @@ const processMessage = async (message, conversationHistory = []) => {
 
     // Call Juspay Grid AI API
     const response = await axios.post(GRID_AI_API_URL, {
-      model: 'open-large',
+      model: 'open-fast',
       messages: messages,
       temperature: 0.7,
       max_tokens: 500

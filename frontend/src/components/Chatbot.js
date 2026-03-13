@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './Chatbot.css';
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const speechSupported = !!SpeechRecognition;
+const synthSupported = !!window.speechSynthesis;
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -8,7 +12,18 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [conversationMode, setConversationMode] = useState(false);
+  const [micError, setMicError] = useState('');
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const conversationModeRef = useRef(false);
+  const sessionIdRef = useRef(null);
+
+  // Keep refs in sync with state
+  useEffect(() => { conversationModeRef.current = conversationMode; }, [conversationMode]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -19,27 +34,45 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize chat with welcome message
-  useEffect(() => {
-    const welcomeMessage = {
-      type: 'bot',
-      text: "Hello! Welcome to TechMart Electronics! 🎉 I'm your personal shopping assistant. We carry top brands like Apple, Samsung, Google, Sony, Dell, Microsoft, and more - all with amazing discounts! What are you looking for today?",
-      options: ["Smartphones", "Laptops", "Gaming", "Best Deals"],
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
+  // Start listening (used internally)
+  const startListening = useCallback(() => {
+    if (!recognitionRef.current) return;
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch (e) {
+      // recognition may already be started
+    }
   }, []);
 
-  // Toggle chatbot open/close
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-  };
+  // Speak text and optionally auto-listen after
+  const speakText = useCallback((text) => {
+    if (!synthSupported) return;
+    window.speechSynthesis.cancel();
+    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+    const lastIndex = sentences.length - 1;
+    sentences.forEach((sentence, i) => {
+      const utterance = new SpeechSynthesisUtterance(sentence.trim());
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => {
+        // Only on the last sentence finishing
+        if (i === lastIndex) {
+          setIsSpeaking(false);
+          // Auto-listen again if conversation mode is still on
+          if (conversationModeRef.current) {
+            setTimeout(() => startListening(), 300);
+          }
+        }
+      };
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    });
+  }, [startListening]);
 
   // Send message to backend
-  const sendMessage = async (messageText) => {
+  const sendMessage = useCallback(async (messageText) => {
     if (!messageText.trim()) return;
 
-    // Add user message to chat
     const userMessage = {
       type: 'user',
       text: messageText,
@@ -52,10 +85,9 @@ const Chatbot = () => {
     try {
       const response = await axios.post('/api/chat/message', {
         message: messageText,
-        sessionId: sessionId
+        sessionId: sessionIdRef.current
       });
 
-      // Add bot response to chat
       const botMessage = {
         type: 'bot',
         text: response.data.response,
@@ -67,16 +99,19 @@ const Chatbot = () => {
       };
       setMessages(prev => [...prev, botMessage]);
 
-      // Store session ID for future messages
-      if (response.data.sessionId && !sessionId) {
+      // Speak bot response if in conversation mode
+      if (conversationModeRef.current && synthSupported) {
+        speakText(response.data.response);
+      }
+
+      if (response.data.sessionId && !sessionIdRef.current) {
         setSessionId(response.data.sessionId);
       }
 
-      // Handle checkout redirect
       if (response.data.checkoutReady && response.data.checkoutUrl) {
         setTimeout(() => {
           window.open(response.data.checkoutUrl, '_blank');
-        }, 2000); // Small delay to let user see the confirmation message
+        }, 2000);
       }
 
     } catch (error) {
@@ -87,23 +122,100 @@ const Chatbot = () => {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
+      // Re-listen even on error if in conversation mode
+      if (conversationModeRef.current) {
+        setTimeout(() => startListening(), 300);
+      }
     } finally {
       setIsLoading(false);
     }
+  }, [speakText, startListening]);
+
+  // Initialize SpeechRecognition
+  useEffect(() => {
+    if (!speechSupported) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript.trim()) {
+        sendMessage(transcript);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        setMicError('Microphone access denied. Please allow mic permission.');
+        setConversationMode(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognitionRef.current?.abort();
+    };
+  }, [sendMessage]);
+
+  // Cleanup TTS on unmount
+  useEffect(() => {
+    return () => {
+      if (synthSupported) window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // Toggle conversation mode on/off
+  const toggleConversationMode = () => {
+    setMicError('');
+    if (conversationMode) {
+      // Turn off
+      setConversationMode(false);
+      if (recognitionRef.current) recognitionRef.current.abort();
+      setIsListening(false);
+      if (synthSupported) window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      // Turn on — start listening immediately
+      setConversationMode(true);
+      if (synthSupported) window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      startListening();
+    }
   };
 
-  // Handle input submit
+  // Initialize chat with welcome message
+  useEffect(() => {
+    const welcomeMessage = {
+      type: 'bot',
+      text: "Hello! Welcome to TechMart Electronics! 🎉 I'm your personal shopping assistant. We carry top brands like Apple, Samsung, Google, Sony, Dell, Microsoft, and more - all with amazing discounts! What are you looking for today?",
+      options: ["Smartphones", "Laptops", "Gaming", "Best Deals"],
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  }, []);
+
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     sendMessage(inputMessage);
   };
 
-  // Handle option click
   const handleOptionClick = (option) => {
     sendMessage(option);
   };
 
-  // Format timestamp
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -114,7 +226,7 @@ const Chatbot = () => {
   return (
     <>
       {/* Floating Chat Button */}
-      <button 
+      <button
         className={`chat-bubble ${isOpen ? 'hidden' : ''}`}
         onClick={toggleChat}
         aria-label="Open chat"
@@ -131,16 +243,22 @@ const Chatbot = () => {
               <div className="bot-avatar">🛍️</div>
               <div className="header-text">
                 <h3>Shopping Assistant</h3>
-                <span className="status">Online • Ready to Help</span>
+                <span className="status">
+                  {conversationMode
+                    ? (isListening ? '🎤 Listening...' : isSpeaking ? '🔊 Speaking...' : 'Voice Active')
+                    : 'Online • Ready to Help'}
+                </span>
               </div>
             </div>
-            <button 
-              className="close-button" 
-              onClick={toggleChat}
-              aria-label="Close chat"
-            >
-              ✕
-            </button>
+            <div className="header-actions">
+              <button
+                className="close-button"
+                onClick={toggleChat}
+                aria-label="Close chat"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="chatbot-messages">
@@ -202,19 +320,32 @@ const Chatbot = () => {
             <input
               type="text"
               className="chatbot-input"
-              placeholder="Type your message..."
+              placeholder={conversationMode ? 'Voice mode active — speak or type...' : 'Type your message...'}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               disabled={isLoading}
             />
-            <button 
-              type="submit" 
+            {speechSupported && synthSupported && (
+              <button
+                type="button"
+                className={`mic-button ${conversationMode ? 'active' : ''} ${isListening ? 'listening' : ''}`}
+                onClick={toggleConversationMode}
+                disabled={isLoading}
+                aria-label={conversationMode ? 'End voice conversation' : 'Start voice conversation'}
+                title={conversationMode ? 'End voice conversation' : 'Start voice conversation'}
+              >
+                {conversationMode ? (isListening ? '🎤' : '🔊') : '🎙️'}
+              </button>
+            )}
+            <button
+              type="submit"
               className="send-button"
               disabled={isLoading || !inputMessage.trim()}
             >
               Send
             </button>
           </form>
+          {micError && <div className="mic-error">{micError}</div>}
         </div>
       </div>
     </>
