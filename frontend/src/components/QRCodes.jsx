@@ -8,7 +8,7 @@ const formatPrice = (p) => `₹${p.toLocaleString('en-IN')}`;
 
 const QRCodes = () => {
   const navigate = useNavigate();
-  const [baseUrl] = useState(window.location.origin);
+  const [baseUrl] = useState('https://8cb3-103-159-11-202.ngrok-free.app');
   const [scanning, setScanning] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
