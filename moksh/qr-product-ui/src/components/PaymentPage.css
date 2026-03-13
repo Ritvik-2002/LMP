@@ -1,0 +1,313 @@
+.payment-container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+/* Payment Header */
+.payment-header {
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.payment-header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Order Summary */
+.order-summary {
+  background: var(--surface);
+  margin: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.order-item-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 4px 0;
+}
+
+.order-item-info p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.order-item-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.order-divider {
+  height: 1px;
+  background: #E5E7EB;
+  margin: 12px 0;
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.total-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Loan Preview */
+.loan-preview {
+  background: linear-gradient(135deg, rgba(18, 218, 168, 0.08) 0%, rgba(10, 154, 120, 0.08) 100%);
+  margin: 0 16px 16px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 218, 168, 0.2);
+}
+
+.loan-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.loan-preview-header span {
+  font-size: 1.25rem;
+}
+
+.loan-preview-header h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.loan-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.loan-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loan-detail-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.loan-detail-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Payment Section */
+.payment-section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.payment-method.selected {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.payment-icon {
+  font-size: 1.5rem;
+}
+
+.payment-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.payment-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.payment-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-method.selected .payment-radio {
+  border-color: var(--primary);
+}
+
+.radio-filled {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* EMI Section */
+.emi-section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.emi-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.emi-plan {
+  background: var(--surface);
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.emi-plan.selected {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.emi-duration {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.emi-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.emi-interest {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+}
+
+/* Payment Action */
+.payment-action {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.pay-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pay-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pay-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secure Footer */
+.secure-footer {
+  text-align: center;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.powered-by {
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 360px) {
+  .emi-plans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

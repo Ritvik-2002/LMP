@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Product UI - Theme Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #888;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .theme-card {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: transform 0.3s;
+    }
+    .theme-card:hover {
+      transform: translateY(-5px);
+    }
+    .theme-header {
+      padding: 24px;
+      text-align: center;
+      color: white;
+    }
+    .theme-logo {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+    .theme-name {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .theme-body {
+      background: white;
+      padding: 20px;
+    }
+    .theme-colors {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .color-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+    .theme-desc {
+      color: #666;
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+    }
+    .demo-link {
+      display: block;
+      padding: 12px;
+      text-align: center;
+      background: #f5f5f5;
+      border-radius: 8px;
+      color: #333;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .demo-link:hover {
+      background: #e5e5e5;
+    }
+
+    /* Croma theme */
+    .theme-croma .theme-header { background: linear-gradient(135deg, #12DAA8 0%, #0A9A78 100%); }
+    /* Reliance theme */
+    .theme-reliance .theme-header { background: linear-gradient(135deg, #E32729 0%, #FF5722 100%); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛒 QR Product UI</h1>
+    <p class="subtitle">Dynamic theming based on merchant_id • Click any card to preview</p>
+
+    <div class="theme-grid">
+      <!-- Croma Theme -->
+      <div class="theme-card theme-croma">
+        <div class="theme-header">
+          <div class="theme-logo">🔌</div>
+          <div class="theme-name">Croma</div>
+        </div>
+        <div class="theme-body">
+          <div class="theme-colors">
+            <div class="color-swatch" style="background: #12DAA8;"></div>
+            <div class="color-swatch" style="background: #0EB892;"></div>
+            <div class="color-swatch" style="background: #0A9A78;"></div>
+            <div class="color-swatch" style="background: #FFD700;"></div>
+          </div>
+          <p class="theme-desc">Fresh teal/green branding. merchant_id prefix: <code>CHR</code></p>
+          <a href="http://localhost:5174" class="demo-link">Preview Croma Theme →</a>
+        </div>
+      </div>
+
+      <!-- Reliance Theme -->
+      <div class="theme-card theme-reliance">
+        <div class="theme-header">
+          <div class="theme-logo">🛒</div>
+          <div class="theme-name">Reliance Digital</div>
+        </div>
+        <div class="theme-body">
+          <div class="theme-colors">
+            <div class="color-swatch" style="background: #E32729;"></div>
+            <div class="color-swatch" style="background: #C41E1F;"></div>
+            <div class="color-swatch" style="background: #FF5722;"></div>
+            <div class="color-swatch" style="background: #FFC107;"></div>
+          </div>
+          <p class="theme-desc">Bold red branding. merchant_id prefix: <code>REL</code></p>
+          <a href="http://localhost:5174?data=eyJtZXJjaGFudCI6eyJtZXJjaGFudF9pZCI6IlJFTF9ESUdJVEFMXzEwMDEiLCJtZXJjaGFudF9uYW1lIjoiUmVsaWFuY2UgRGlnaXRhbCJ9LCJkZXZpY2UiOnsibW9kZWwiOiJHYWxheHkgUzI2IiwiYnJhbmQiOiJTYW1zdW5nIiwicmVsZWFzZV95ZWFyIjoyMDI2fSwiaGFyZHdhcmUiOnsiY2hpcHNldCI6IkV4eW5vcyAyNjAwIiwiY3B1IjoiT2N0YS1jb3JlIiwiZ3B1IjoiWGNsaXBzZSA5NjAiLCJyYW1fZ2IiOjEyLCJzdG9yYWdlX2diIjoyNTYsImJhdHRlcnlfbWFoIjo0ODAwfSwiZGlzcGxheSI6eyJ0eXBlIjoiRHluYW1pYyBBTU9MRUQiLCJzaXplX2luY2giOjYuNCwicmVzb2x1dGlvbiI6IjMyMDB4MTQ0MCIsInJlZnJlc2hfcmF0ZV9oeiI6MTQ0fSwib3MiOnsicGxhdGZvcm0iOiJBbmRyb2lkIiwidmVyc2lvbiI6IjE2IiwidWkiOiJPbmUgVUkgOCJ9LCJuZXR3b3JrIjp7InNpbV90eXBlIjoiRHVhbCBTSU0iLCI1Z19zdXBwb3J0ZWQiOnRydWUsIndpZmkiOiJXaUZpIDciLCJibHVldG9vdGgiOiI1LjQiLCJuZmMiOnRydWV9LCJsb2FuX3JlcXVlc3QiOnsiYW1vdW50IjoxNTAwMDAsImN1cnJlbmN5IjoiSU5SIiwidGVudXJlX21vbnRocyI6MjQsInB1cnBvc2UiOiJlbGVjdHJvbmljc19wdXJjaGFzZSJ9LCJyZXF1ZXN0X2lkIjoiUkVRLVJFTC0yMDI2MDMxMy0wMDAxIn0=" class="demo-link">Preview Reliance Theme →</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; color: #666;">
+      <p>📁 Project: <code>qr-product-ui/</code></p>
+      <p>🚀 Dev server: <a href="http://localhost:5174" style="color: #12DAA8;">http://localhost:5174</a></p>
+    </div>
+  </div>
+</body>
+</html>
