@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<QRCodes />} />
         <Route path="/product/:productId" element={<App />} />
         <Route path="/qr-codes" element={<QRCodes />} />
       </Routes>
