@@ -16,7 +16,9 @@
       "Bash(source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npx vite build 2>&1)",
       "Bash(git rm:*)",
       "Bash(rm -rf /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/node_modules /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/package-lock.json && source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npm install 2>&1 | tail -5)",
-      "Bash(ls /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/src/components/ && source ~/.nvm/nvm.sh && nvm use 22 && npx vite build 2>&1)"
+      "Bash(ls /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/src/components/ && source ~/.nvm/nvm.sh && nvm use 22 && npx vite build 2>&1)",
+      "WebSearch",
+      "Bash(npm run:*)"
     ]
   }
 }

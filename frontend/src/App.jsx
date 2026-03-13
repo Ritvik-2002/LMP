@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { getMerchantTheme } from './themes/merchantThemes';
 import PaymentPage from './components/PaymentPage';
 import Chatbot from './components/Chatbot';
+import catalogue, { getSimilarProducts, compareSpecs } from './data/catalogue';
 import './App.css';
 
-// Sample data for demo - in production this would come from URL params or API
 const sampleData = {
   request_id: "REQ-CHR-20260313-0001",
   merchant: {
@@ -14,49 +14,9 @@ const sampleData = {
     channel: "web",
     source: "chrome_browser"
   },
-  device: {
-    brand: "Samsung",
-    manufacturer: "Samsung Electronics",
-    model: "Galaxy S26",
-    device_code: "SM-S926B",
-    device_type: "smartphone",
-    release_year: 2026
-  },
-  hardware: {
-    chipset: "Exynos 2600",
-    cpu: "Octa-core",
-    gpu: "Xclipse 960",
-    ram_gb: 12,
-    storage_gb: 256,
-    battery_mah: 4800
-  },
-  display: {
-    type: "Dynamic AMOLED",
-    size_inch: 6.4,
-    resolution: "3200x1440",
-    refresh_rate_hz: 144
-  },
-  os: {
-    platform: "Android",
-    version: "16",
-    ui: "One UI 8"
-  },
-  network: {
-    sim_type: "Dual SIM",
-    "5g_supported": true,
-    wifi: "WiFi 7",
-    bluetooth: "5.4",
-    nfc: true
-  },
-  browser_context: {
-    browser: "Chrome",
-    browser_version: "145.0",
-    user_agent: "Mozilla/5.0",
-    ip_region: "IN",
-    network_type: "5G"
-  },
+  product_id: 'samsung-galaxy-s26',
   loan_request: {
-    amount: 150000,
+    amount: 129999,
     currency: "INR",
     tenure_months: 24,
     purpose: "electronics_purchase"
@@ -70,29 +30,55 @@ const sampleData = {
   timestamp: "2026-03-13T10:30:00Z"
 };
 
-// Format currency
-const formatCurrency = (amount, currency) => {
+const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency,
+    currency: 'INR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 };
 
-// Apply theme to CSS variables
 const applyTheme = (theme) => {
   const root = document.documentElement;
-  root.style.setProperty('--primary', theme.primary);
-  root.style.setProperty('--primary-dark', theme.primaryDark);
-  root.style.setProperty('--secondary', theme.secondary);
-  root.style.setProperty('--accent', theme.accent);
-  root.style.setProperty('--error', theme.error);
-  root.style.setProperty('--background', theme.background);
-  root.style.setProperty('--surface', theme.surface);
-  root.style.setProperty('--text', theme.text);
-  root.style.setProperty('--text-secondary', theme.textSecondary);
-  root.style.setProperty('--gradient', theme.gradient);
+  Object.entries({
+    '--primary': theme.primary,
+    '--primary-dark': theme.primaryDark,
+    '--secondary': theme.secondary,
+    '--accent': theme.accent,
+    '--error': theme.error,
+    '--background': theme.background,
+    '--surface': theme.surface,
+    '--text': theme.text,
+    '--text-secondary': theme.textSecondary,
+    '--gradient': theme.gradient,
+  }).forEach(([k, v]) => root.style.setProperty(k, v));
+};
+
+// Phone SVG illustration component
+const PhoneImage = ({ color, brand, size = 'large' }) => {
+  const w = size === 'large' ? 180 : 60;
+  const h = size === 'large' ? 360 : 120;
+  const r = size === 'large' ? 28 : 10;
+  const p = size === 'large' ? 8 : 3;
+  const ir = size === 'large' ? 22 : 8;
+  const fs = size === 'large' ? 48 : 16;
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <defs>
+        <linearGradient id={`screen-${color.replace('#','')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.6" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width={w} height={h} rx={r} fill="#1a1a2e" />
+      <rect x={p} y={p} width={w-p*2} height={h-p*2} rx={ir} fill={`url(#screen-${color.replace('#','')})`} />
+      <text x={w/2} y={h/2} textAnchor="middle" dominantBaseline="central"
+        fontSize={fs} fontWeight="800" fill="rgba(255,255,255,0.25)" fontFamily="system-ui">
+        {brand?.[0] || '?'}
+      </text>
+    </svg>
+  );
 };
 
 function App() {
@@ -100,19 +86,16 @@ function App() {
   const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [selectedStorage, setSelectedStorage] = useState(null);
+  const [compareWith, setCompareWith] = useState(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const encodedData = urlParams.get('data');
-
     if (encodedData) {
-      try {
-        const decoded = JSON.parse(atob(encodedData));
-        setData(decoded);
-      } catch (e) {
-        console.error('Failed to parse data from URL', e);
-        setData(sampleData);
-      }
+      try { setData(JSON.parse(atob(encodedData))); } catch { setData(sampleData); }
     } else {
       setData(sampleData);
     }
@@ -127,20 +110,6 @@ function App() {
     }
   }, [data]);
 
-  const handleCompareWithAI = () => {
-    console.log('Compare other options with AI clicked');
-    alert('AI Comparison: This would show similar devices with pros/cons comparison!');
-  };
-
-  const handleAddToCart = () => {
-    console.log('Add to Cart clicked');
-    setShowPayment(true);
-  };
-
-  const handleBackFromPayment = () => {
-    setShowPayment(false);
-  };
-
   if (loading || !data || !theme) {
     return (
       <div className="loading">
@@ -150,143 +119,304 @@ function App() {
     );
   }
 
-  // Show Payment Page
+  // Get product from catalogue
+  const product = catalogue.find(p => p.id === data.product_id) || catalogue[0];
+  const similar = getSimilarProducts(product.id, 4);
+  const storage = selectedStorage || product.default_storage;
+  const color = product.colors[selectedColor];
+  const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+  const emi = Math.round(product.price / 24);
+
   if (showPayment) {
     return (
       <>
-        <PaymentPage data={data} theme={theme} onBack={handleBackFromPayment} />
-        <Chatbot />
+        <PaymentPage data={data} theme={theme} onBack={() => setShowPayment(false)} />
+        <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
       </>
     );
   }
 
-  const { device, hardware, display, os, network, merchant } = data;
-
   return (
-    <div className="app-container">
-      {/* Header */}
-      <header className="header">
-        <h1 className="header-title">{merchant.merchant_name}</h1>
-      </header>
-
-      {/* Product Card */}
-      <div className="product-card">
-        {/* Product Hero */}
-        <div className="product-hero">
-          <h2 className="product-name">{device.model}</h2>
-          <p className="product-brand">{device.brand} • {device.release_year}</p>
-        </div>
-
-        {/* Hardware Section */}
-        <div className="section">
-          <div className="section-header">
-            <span className="section-icon">⚡</span>
-            <h3 className="section-title">Hardware</h3>
-          </div>
-          <div className="specs-grid">
-            <div className="spec-item">
-              <div className="spec-label">Chipset</div>
-              <div className="spec-value">{hardware.chipset}</div>
-            </div>
-            <div className="spec-item">
-              <div className="spec-label">CPU</div>
-              <div className="spec-value">{hardware.cpu}</div>
-            </div>
-            <div className="spec-item">
-              <div className="spec-label">GPU</div>
-              <div className="spec-value">{hardware.gpu}</div>
-            </div>
-            <div className="spec-item">
-              <div className="spec-label">RAM</div>
-              <div className="spec-value highlight">{hardware.ram_gb} GB</div>
-            </div>
-            <div className="spec-item">
-              <div className="spec-label">Storage</div>
-              <div className="spec-value highlight">{hardware.storage_gb} GB</div>
-            </div>
-            <div className="spec-item">
-              <div className="spec-label">Battery</div>
-              <div className="spec-value">{hardware.battery_mah} mAh</div>
-            </div>
+    <div className="page-wrapper">
+      {/* Top Nav */}
+      <nav className="top-nav">
+        <div className="nav-inner">
+          <div className="nav-logo">{data.merchant.merchant_name}</div>
+          <div className="nav-actions">
+            <button className="nav-icon-btn">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </button>
+            <button className="nav-icon-btn">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button className="nav-icon-btn cart-btn">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            </button>
           </div>
         </div>
+      </nav>
 
-        {/* Display Section */}
-        <div className="section">
-          <div className="section-header">
-            <span className="section-icon">📱</span>
-            <h3 className="section-title">Display</h3>
+      <main className="main-content">
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <span>Home</span> <span className="sep">/</span>
+          <span>Mobiles</span> <span className="sep">/</span>
+          <span>{product.brand}</span> <span className="sep">/</span>
+          <span className="current">{product.model}</span>
+        </div>
+
+        <div className="product-layout">
+          {/* Left: Product Image */}
+          <div className="product-gallery">
+            <div className="gallery-main" style={{ background: color.image_bg }}>
+              <PhoneImage color={color.hex} brand={product.brand} size="large" />
+            </div>
+            <div className="gallery-thumbs">
+              {product.colors.map((c, i) => (
+                <div
+                  key={i}
+                  className={`thumb ${i === selectedColor ? 'active' : ''}`}
+                  onClick={() => setSelectedColor(i)}
+                  style={{ background: c.image_bg, cursor: 'pointer' }}
+                >
+                  <PhoneImage color={c.hex} brand={product.brand} size="small" />
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="specs-grid">
-            <div className="spec-item">
-              <div className="spec-label">Type</div>
-              <div className="spec-value">{display.type}</div>
+
+          {/* Right: Product Details */}
+          <div className="product-details">
+            <div className="product-title-section">
+              <h1 className="product-title">{product.brand} {product.model}</h1>
+              <p className="product-subtitle">{product.device_code} | {product.hardware.ram_gb}GB RAM | {storage}GB Storage</p>
+              <div className="product-rating">
+                <span className="stars">{'★'.repeat(Math.floor(product.rating))}{'☆'.repeat(5 - Math.floor(product.rating))}</span>
+                <span className="rating-count">{product.rating} ({product.rating_count.toLocaleString()} ratings)</span>
+              </div>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">Size</div>
-              <div className="spec-value">{display.size_inch}"</div>
+
+            <div className="price-section">
+              <div className="price-row">
+                <span className="current-price">{formatCurrency(product.price)}</span>
+                <span className="original-price">{formatCurrency(product.mrp)}</span>
+                <span className="discount-badge">{discount}% OFF</span>
+              </div>
+              <p className="emi-info">EMI from {formatCurrency(emi)}/month</p>
+              <p className="tax-info">Inclusive of all taxes</p>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">Resolution</div>
-              <div className="spec-value">{display.resolution}</div>
+
+            {/* Highlights */}
+            {product.highlights && (
+              <div className="highlights-section">
+                <h3 className="option-label">Highlights</h3>
+                <ul className="highlights-list">
+                  {product.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Color Options */}
+            <div className="option-section">
+              <h3 className="option-label">Colour — <span className="color-name">{color.name}</span></h3>
+              <div className="color-options">
+                {product.colors.map((c, i) => (
+                  <button
+                    key={i}
+                    className={`color-swatch ${i === selectedColor ? 'selected' : ''}`}
+                    style={{ background: c.hex }}
+                    onClick={() => setSelectedColor(i)}
+                    title={c.name}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">Refresh Rate</div>
-              <div className="spec-value highlight">{display.refresh_rate_hz} Hz</div>
+
+            {/* Storage Options */}
+            <div className="option-section">
+              <h3 className="option-label">Storage</h3>
+              <div className="variant-options">
+                {product.storage_options.map(s => (
+                  <button
+                    key={s}
+                    className={`variant-btn ${s === storage ? 'selected' : ''}`}
+                    onClick={() => setSelectedStorage(s)}
+                  >
+                    {s >= 1024 ? `${s/1024} TB` : `${s} GB`}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Key Specs */}
+            <div className="key-specs">
+              <h3 className="option-label">Key Specifications</h3>
+              <div className="specs-grid">
+                <div className="spec-card">
+                  <div className="spec-card-icon">
+                    <svg width="24" height="24" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </div>
+                  <div className="spec-card-label">Display</div>
+                  <div className="spec-card-value">{product.display.size_inch}" {product.display.type}</div>
+                </div>
+                <div className="spec-card">
+                  <div className="spec-card-icon">
+                    <svg width="24" height="24" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  </div>
+                  <div className="spec-card-label">Processor</div>
+                  <div className="spec-card-value">{product.hardware.chipset}</div>
+                </div>
+                <div className="spec-card">
+                  <div className="spec-card-icon">
+                    <svg width="24" height="24" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="6" width="22" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg>
+                  </div>
+                  <div className="spec-card-label">Battery</div>
+                  <div className="spec-card-value">{product.hardware.battery_mah} mAh</div>
+                </div>
+                <div className="spec-card">
+                  <div className="spec-card-icon">
+                    <svg width="24" height="24" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2m-3.64-6.36l-1.42 1.42M6.34 17.66l-1.42 1.42m0-12.73l1.42 1.42m11.32 11.32l1.42 1.42"/></svg>
+                  </div>
+                  <div className="spec-card-label">Camera</div>
+                  <div className="spec-card-value">{product.camera}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="feature-tags">
+              {product.network['5g_supported'] && <span className="feature-tag">5G</span>}
+              {product.network.nfc && <span className="feature-tag">NFC</span>}
+              <span className="feature-tag">{product.network.wifi}</span>
+              <span className="feature-tag">{product.os.platform} {product.os.version}</span>
+              <span className="feature-tag">{product.os.ui}</span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="action-row">
+              <button className="btn-add-cart" onClick={() => setShowPayment(true)}>Add to Cart</button>
+              <button className="btn-buy-now" onClick={() => setShowPayment(true)}>Buy Now</button>
+            </div>
+
+            {/* AI Assistant Toggle */}
+            <button className="ai-assist-btn" onClick={() => setShowChat(true)}>
+              <span className="ai-icon">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              </span>
+              Ask AI Assistant
+              <span className="ai-badge">AI</span>
+            </button>
           </div>
         </div>
 
-        {/* OS & Network Section */}
-        <div className="section">
-          <div className="section-header">
-            <span className="section-icon">🔧</span>
-            <h3 className="section-title">Software & Connectivity</h3>
+        {/* Compare with Similar Products */}
+        <div className="similar-section">
+          <h2 className="similar-title">Similar Phones</h2>
+          <p className="similar-subtitle">Ranked by spec similarity</p>
+          <div className="similar-grid">
+            {similar.map(p => {
+              const d = Math.round(((p.mrp - p.price) / p.mrp) * 100);
+              const isComparing = compareWith?.id === p.id;
+              return (
+                <div
+                  key={p.id}
+                  className={`similar-card ${isComparing ? 'active' : ''}`}
+                  onClick={() => setCompareWith(isComparing ? null : p)}
+                >
+                  <div className="similar-image" style={{ background: p.colors[0].image_bg }}>
+                    <PhoneImage color={p.colors[0].hex} brand={p.brand} size="small" />
+                  </div>
+                  <div className="similar-info">
+                    <div className="similar-name-row">
+                      <h4 className="similar-name">{p.brand} {p.model}</h4>
+                      <span className="similarity-badge">{p.similarity}% match</span>
+                    </div>
+                    <div className="similar-specs">
+                      {p.hardware.ram_gb}GB | {p.display.size_inch}" | {p.hardware.battery_mah}mAh
+                    </div>
+                    <div className="similar-price-row">
+                      <span className="similar-price">{formatCurrency(p.price)}</span>
+                      {d > 0 && <span className="similar-discount">{d}% off</span>}
+                    </div>
+                    <div className="similar-rating">
+                      <span className="stars-sm">{'★'.repeat(Math.floor(p.rating))}</span>
+                      <span>{p.rating}</span>
+                    </div>
+                    <div className="compare-cta">{isComparing ? 'Hide comparison' : 'Compare specs'}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="specs-grid">
-            <div className="spec-item">
-              <div className="spec-label">OS</div>
-              <div className="spec-value">{os.platform} {os.version}</div>
+
+          {/* Spec Comparison Table */}
+          {compareWith && (
+            <div className="compare-table-wrapper">
+              <div className="compare-table-header">
+                <h3>Spec Comparison</h3>
+                <button className="compare-close" onClick={() => setCompareWith(null)}>✕</button>
+              </div>
+              <div className="compare-table">
+                <div className="compare-row compare-row-header">
+                  <span className="compare-label">Spec</span>
+                  <span className="compare-val-a">{product.brand} {product.model}</span>
+                  <span className="compare-val-b">{compareWith.brand} {compareWith.model}</span>
+                </div>
+                {compareSpecs(product, compareWith).map(spec => (
+                  <div key={spec.key} className={`compare-row ${spec.winner !== 'tie' ? 'has-winner' : ''}`}>
+                    <span className="compare-label">{spec.label}</span>
+                    <span className={`compare-val-a ${spec.winner === 'a' ? 'winner' : ''}`}>{spec.a}</span>
+                    <span className={`compare-val-b ${spec.winner === 'b' ? 'winner' : ''}`}>{spec.b}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">UI</div>
-              <div className="spec-value">{os.ui}</div>
+          )}
+        </div>
+
+        {/* Full Specifications */}
+        <div className="full-specs">
+          <h2 className="full-specs-title">All Specifications</h2>
+          <div className="spec-table">
+            <div className="spec-group">
+              <h4 className="spec-group-title">Hardware</h4>
+              <div className="spec-row"><span>Chipset</span><span>{product.hardware.chipset}</span></div>
+              <div className="spec-row"><span>CPU</span><span>{product.hardware.cpu}</span></div>
+              <div className="spec-row"><span>GPU</span><span>{product.hardware.gpu}</span></div>
+              <div className="spec-row"><span>RAM</span><span>{product.hardware.ram_gb} GB</span></div>
+              <div className="spec-row"><span>Storage</span><span>{storage} GB</span></div>
+              <div className="spec-row"><span>Battery</span><span>{product.hardware.battery_mah} mAh</span></div>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">WiFi</div>
-              <div className="spec-value">{network.wifi}</div>
+            <div className="spec-group">
+              <h4 className="spec-group-title">Display</h4>
+              <div className="spec-row"><span>Type</span><span>{product.display.type}</span></div>
+              <div className="spec-row"><span>Size</span><span>{product.display.size_inch} inches</span></div>
+              <div className="spec-row"><span>Resolution</span><span>{product.display.resolution}</span></div>
+              <div className="spec-row"><span>Refresh Rate</span><span>{product.display.refresh_rate_hz} Hz</span></div>
             </div>
-            <div className="spec-item">
-              <div className="spec-label">Bluetooth</div>
-              <div className="spec-value">{network.bluetooth}</div>
+            <div className="spec-group">
+              <h4 className="spec-group-title">Camera</h4>
+              <div className="spec-row"><span>Rear Camera</span><span>{product.camera}</span></div>
             </div>
-          </div>
-          <div className="feature-tags" style={{ marginTop: '12px' }}>
-            {network['5g_supported'] && <span className="feature-tag">5G Ready</span>}
-            {network.nfc && <span className="feature-tag">NFC</span>}
-            <span className="feature-tag">{network.sim_type}</span>
+            <div className="spec-group">
+              <h4 className="spec-group-title">Software & Connectivity</h4>
+              <div className="spec-row"><span>OS</span><span>{product.os.platform} {product.os.version} ({product.os.ui})</span></div>
+              <div className="spec-row"><span>SIM</span><span>{product.network.sim_type}</span></div>
+              <div className="spec-row"><span>WiFi</span><span>{product.network.wifi}</span></div>
+              <div className="spec-row"><span>Bluetooth</span><span>{product.network.bluetooth}</span></div>
+              <div className="spec-row"><span>5G</span><span>{product.network['5g_supported'] ? 'Yes' : 'No'}</span></div>
+              <div className="spec-row"><span>NFC</span><span>{product.network.nfc ? 'Yes' : 'No'}</span></div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Action Buttons */}
-      <div className="action-buttons">
-        <div className="buttons-row">
-          <button className="btn-primary" onClick={handleCompareWithAI}>
-            🤖 Compare other options with AI
-          </button>
-          <button className="btn-secondary" onClick={handleAddToCart}>
-            🛒 Add to Cart
-          </button>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-request-id">{data.request_id}</div>
+      <footer className="site-footer">
+        <p>{data.merchant.merchant_name} &copy; 2026. All rights reserved.</p>
       </footer>
 
-      <Chatbot />
+      {/* AI Chat Side Panel */}
+      <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
     </div>
   );
 }
