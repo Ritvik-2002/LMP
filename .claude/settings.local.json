@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree -L 3 /Users/prakhar.prakash/Desktop/Clones/LMP -I 'node_modules' 2>/dev/null || find /Users/prakhar.prakash/Desktop/Clones/LMP -type d -not -path '*/node_modules*' | sort)",
+      "Bash(cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npx react-scripts build 2>&1 | tail -5)",
+      "Bash(find /Users/prakhar.prakash/Desktop/Clones/LMP/backend -name \".env*\" -o -name \"config*\" 2>/dev/null | head -20)",
+      "Bash(npx react-scripts:*)",
+      "Bash(git checkout:*)",
+      "Bash(cd /Users/prakhar.prakash/Desktop/Clones/LMP/moksh/qr-product-ui && npm run build 2>&1 | tail -10)",
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(node -e \"\nconst fs = require\\('fs'\\);\n// Check JSX files parse correctly \\(basic syntax check\\)\nconst files = ['src/App.jsx', 'src/components/Chatbot.jsx'];\nfiles.forEach\\(f => {\n  const content = fs.readFileSync\\(f, 'utf8'\\);\n  // Check imports are valid\n  const imports = content.match\\(/^import .+$/gm\\);\n  console.log\\(f + ': ' + imports.length + ' imports, ' + content.split\\('\\\\\\\\n'\\).length + ' lines - OK'\\);\n}\\);\n\")",
+      "Bash(source ~/.nvm/nvm.sh && nvm install 22)",
+      "Bash(source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/moksh/qr-product-ui && rm -rf node_modules package-lock.json && npm install 2>&1 | tail -5)",
+      "Bash(source ~/.nvm/nvm.sh && nvm use 22 && npx vite build 2>&1)",
+      "Bash(source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npx vite build 2>&1)",
+      "Bash(git rm:*)",
+      "Bash(rm -rf /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/node_modules /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/package-lock.json && source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npm install 2>&1 | tail -5)",
+      "Bash(ls /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/src/components/ && source ~/.nvm/nvm.sh && nvm use 22 && npx vite build 2>&1)"
+    ]
+  }
+}

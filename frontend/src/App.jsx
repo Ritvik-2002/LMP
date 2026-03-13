@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMerchantTheme } from './themes/merchantThemes';
 import PaymentPage from './components/PaymentPage';
+import Chatbot from './components/Chatbot';
 import './App.css';
 
 // Sample data for demo - in production this would come from URL params or API
@@ -151,7 +152,12 @@ function App() {
 
   // Show Payment Page
   if (showPayment) {
-    return <PaymentPage data={data} theme={theme} onBack={handleBackFromPayment} />;
+    return (
+      <>
+        <PaymentPage data={data} theme={theme} onBack={handleBackFromPayment} />
+        <Chatbot />
+      </>
+    );
   }
 
   const { device, hardware, display, os, network, merchant } = data;
@@ -279,6 +285,8 @@ function App() {
       <footer className="footer">
         <div className="footer-request-id">{data.request_id}</div>
       </footer>
+
+      <Chatbot />
     </div>
   );
 }

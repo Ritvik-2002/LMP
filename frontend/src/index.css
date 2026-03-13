@@ -1,3 +1,17 @@
+/* Dynamic theme variables - applied via JavaScript */
+:root {
+  --primary: #4285F4;
+  --primary-dark: #3367D6;
+  --secondary: #34A853;
+  --accent: #FBBC04;
+  --error: #EA4335;
+  --background: #F8F9FA;
+  --surface: #FFFFFF;
+  --text: #202124;
+  --text-secondary: #5F6368;
+  --gradient: linear-gradient(135deg, #4285F4 0%, #34A853 100%);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,16 +19,10 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.5;
   min-height: 100vh;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
 }
