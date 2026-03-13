@@ -1,16 +1,20 @@
-/* ===== Checkout Container ===== */
+/* ===== Juspay Blue Checkout Theme ===== */
 .checkout-container {
+  --jp-blue: #2B6CB0;
+  --jp-blue-dark: #1E4E8C;
+  --jp-blue-light: #EBF4FF;
+  --jp-blue-gradient: linear-gradient(135deg, #2B6CB0 0%, #3182CE 100%);
   max-width: 520px;
   margin: 0 auto;
   min-height: 100vh;
-  background: #f8f9fa;
+  background: #f7f9fc;
   display: flex;
   flex-direction: column;
 }
 
 /* ===== Header ===== */
 .checkout-header {
-  background: #1a1a2e;
+  background: linear-gradient(135deg, #1a365d 0%, #2B6CB0 100%);
   padding: 14px 20px;
   display: flex;
   align-items: center;
@@ -21,7 +25,7 @@
 }
 
 .checkout-back {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.12);
   border: none;
   color: white;
   padding: 8px;
@@ -32,7 +36,7 @@
   transition: background 0.2s;
 }
 
-.checkout-back:hover { background: rgba(255,255,255,0.2); }
+.checkout-back:hover { background: rgba(255,255,255,0.22); }
 
 .checkout-header-info { flex: 1; }
 
@@ -45,10 +49,21 @@
 
 .checkout-merchant {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.checkout-secure { font-size: 1.2rem; }
+.checkout-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+}
 
 /* Progress */
 .checkout-progress {
@@ -58,7 +73,7 @@
 
 .checkout-progress-bar {
   height: 100%;
-  background: var(--gradient);
+  background: var(--jp-blue-gradient);
   transition: width 0.4s ease;
 }
 
@@ -103,7 +118,7 @@
 .step-number {
   width: 32px;
   height: 32px;
-  background: var(--gradient);
+  background: var(--jp-blue-gradient, var(--gradient));
   color: white;
   border-radius: 50%;
   display: flex;
@@ -159,7 +174,7 @@
   box-sizing: border-box;
 }
 
-.form-input:focus { border-color: var(--primary); }
+.form-input:focus { border-color: var(--jp-blue, var(--primary)); }
 
 .form-input-prefix {
   display: flex;
@@ -244,8 +259,8 @@
 }
 
 .consent-checkbox input:checked + .checkmark {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--jp-blue, var(--primary));
+  border-color: var(--jp-blue, var(--primary));
 }
 
 .consent-checkbox input:checked + .checkmark::after {
@@ -258,6 +273,52 @@
 .consent-checkbox a {
   color: var(--primary-dark);
   text-decoration: underline;
+}
+
+.consent-lender-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.consent-lender-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+  background: #f0f0f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* ===== Employment Chips ===== */
+.employment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.employment-chip {
+  padding: 8px 16px;
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.employment-chip:hover {
+  border-color: var(--jp-blue, var(--primary));
+  background: rgba(43, 108, 176, 0.03);
+}
+
+.employment-chip.selected {
+  border-color: var(--jp-blue, var(--primary));
+  background: rgba(43, 108, 176, 0.08);
+  color: var(--jp-blue-dark, var(--primary-dark));
 }
 
 /* ===== Eligibility ===== */
@@ -361,7 +422,7 @@
   transition: border-color 0.2s;
 }
 
-.lender-card.selected { border-color: var(--primary); }
+.lender-card.selected { border-color: var(--jp-blue, var(--primary)); }
 
 .lender-top {
   display: flex;
@@ -369,7 +430,31 @@
   gap: 12px;
 }
 
-.lender-logo { font-size: 1.5rem; }
+.lender-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lender-logo-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 .lender-info { flex: 1; display: flex; flex-direction: column; }
 .lender-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
 .lender-rate { font-size: 0.72rem; color: var(--text-secondary); }
@@ -384,12 +469,12 @@
   justify-content: center;
 }
 
-.lender-card.selected .lender-radio { border-color: var(--primary); }
+.lender-card.selected .lender-radio { border-color: var(--jp-blue, var(--primary)); }
 
 .radio-dot {
   width: 10px;
   height: 10px;
-  background: var(--primary);
+  background: var(--jp-blue, var(--primary));
   border-radius: 50%;
 }
 
@@ -424,8 +509,8 @@
 }
 
 .tenure-chip.selected {
-  border-color: var(--primary);
-  background: rgba(18, 218, 168, 0.05);
+  border-color: var(--jp-blue, var(--primary));
+  background: rgba(43, 108, 176, 0.05);
 }
 
 .tenure-months { font-size: 0.78rem; font-weight: 700; color: var(--text); display: block; }
@@ -751,11 +836,166 @@
   transition: border-color 0.2s;
 }
 
-.dp-method.selected { border-color: var(--primary); }
+.dp-method.selected { border-color: var(--jp-blue, var(--primary)); }
 .dp-method-icon { font-size: 1.3rem; }
 .dp-method-info { flex: 1; display: flex; flex-direction: column; }
 .dp-method-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
 .dp-method-desc { font-size: 0.7rem; color: var(--text-secondary); }
+
+/* ===== Cash Down Payment ===== */
+.cash-dp-section {
+  margin-bottom: 16px;
+}
+
+.cash-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cash-step-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.cash-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cash-step-card strong {
+  font-size: 0.85rem;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.cash-step-card p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cash-otp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.3s ease;
+}
+
+.cash-otp-display {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(18, 218, 168, 0.06), rgba(18, 218, 168, 0.02));
+  border: 1.5px solid rgba(18, 218, 168, 0.2);
+  border-radius: 14px;
+}
+
+.cash-otp-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: rgba(18, 218, 168, 0.12);
+  padding: 3px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.cash-otp-code {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--primary-dark);
+  letter-spacing: 12px;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
+}
+
+.cash-otp-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cash-otp-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cash-otp-divider::before,
+.cash-otp-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+.cash-otp-divider span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cash-otp-error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.cash-verified {
+  text-align: center;
+  padding: 24px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.3s ease;
+}
+
+.cash-verified-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.cash-verified h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #166534;
+  margin: 0 0 4px;
+}
+
+.cash-verified p {
+  font-size: 0.82rem;
+  color: #16a34a;
+  margin: 0;
+}
 
 /* ===== KFS ===== */
 .kfs-card {
@@ -929,7 +1169,7 @@
 .checkout-btn {
   width: 100%;
   padding: 14px;
-  background: var(--gradient);
+  background: var(--jp-blue-gradient, var(--gradient));
   color: white;
   border: none;
   border-radius: 12px;
@@ -954,7 +1194,7 @@
   width: 100%;
   padding: 14px;
   background: white;
-  color: var(--text);
+  color: var(--jp-blue, var(--text));
   border: 1.5px solid #e0e0e0;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -963,7 +1203,7 @@
   transition: border-color 0.2s;
 }
 
-.checkout-btn-secondary:hover { border-color: var(--primary); }
+.checkout-btn-secondary:hover { border-color: var(--jp-blue, var(--primary)); }
 
 /* ===== Footer ===== */
 .checkout-footer {
@@ -977,9 +1217,154 @@
   flex-wrap: wrap;
 }
 
+.footer-secured {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: #2B6CB0;
+}
+
+/* ===== Repayment Setup ===== */
+.repayment-summary {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.repayment-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.repayment-summary-row span:last-child {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.repayment-emi {
+  color: var(--primary-dark) !important;
+  font-weight: 700 !important;
+}
+
+.repayment-section-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.repayment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.repayment-method {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: white;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.repayment-method:hover {
+  border-color: #ccc;
+}
+
+.repayment-method.selected {
+  border-color: var(--jp-blue, var(--primary));
+  background: rgba(43, 108, 176, 0.03);
+  box-shadow: 0 0 0 1px var(--jp-blue, var(--primary));
+}
+
+.repayment-method-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.repayment-method-info {
+  flex: 1;
+}
+
+.repayment-method-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.repayment-method-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.repayment-details-box {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+  animation: fadeSlide 0.25s ease;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.repayment-details-box h4 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.repayment-details-box p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.repayment-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.8rem;
+}
+
+.repayment-info-row:last-child {
+  border-bottom: none;
+}
+
+.repayment-info-row span:first-child {
+  color: var(--text-secondary);
+}
+
+.repayment-info-row span:last-child {
+  font-weight: 600;
+  color: var(--text);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 480px) {
   .checkout-body { padding: 12px 16px 20px; }
   .tenure-grid { grid-template-columns: repeat(2, 1fr); }
   .otp-input { width: 40px; height: 46px; }
+  .employment-options { gap: 6px; }
+  .employment-chip { padding: 6px 12px; font-size: 0.78rem; }
 }

@@ -4,12 +4,20 @@ import './PaymentPage.css';
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
-const STEPS = ['details', 'consent', 'eligibility', 'offers', 'kyc', 'final-offers', 'downpayment', 'kfs', 'success'];
+const JuspayLogo = ({ size = 24 }) => (
+  <img
+    src="https://cdn.theorg.com/ccf55d93-b311-46ad-b820-2c25615e51a2_medium.jpg"
+    alt="Juspay"
+    style={{ width: size, height: size, borderRadius: 4, objectFit: 'contain' }}
+  />
+);
+
+const STEPS = ['details', 'consent', 'eligibility', 'offers', 'kyc', 'final-offers', 'downpayment', 'repayment', 'kfs', 'success'];
 
 const LENDERS = [
-  { id: 'hdfc', name: 'HDFC Bank', logo: '🏦', rates: [12, 12.5, 13], maxTenure: 24 },
-  { id: 'icici', name: 'ICICI Bank', logo: '🏛️', rates: [11.5, 12, 12.5], maxTenure: 18 },
-  { id: 'bajaj', name: 'Bajaj Finance', logo: '💳', rates: [13, 13.5, 14], maxTenure: 24, noCost: [3, 6] },
+  { id: 'fibe', name: 'Fibe', logo: 'F', logoColor: '#6C5CE7', rates: [14, 14.5, 15], maxTenure: 24, noCost: [3, 6] },
+  { id: 'tvs', name: 'TVS Credit', logo: 'T', logoColor: '#E74C3C', rates: [13, 13.5, 14], maxTenure: 24 },
+  { id: 'dmi', name: 'DMI Finance', logo: 'D', logoColor: '#2980B9', rates: [12.5, 13, 13.5], maxTenure: 18 },
 ];
 
 const calculateEmi = (principal, months, rate) => {
@@ -30,14 +38,20 @@ const loadSession = () => {
 
 const clearSession = () => sessionStorage.removeItem(STORAGE_KEY);
 
-function PaymentPage({ data, theme, onBack }) {
+function PaymentPage({ data, theme, onBack, onOrderComplete }) {
   const saved = useRef(loadSession()).current;
 
   const [step, setStep] = useState(saved?.step || 'details');
-  const [form, setForm] = useState(saved?.form || { name: '', mobile: '', email: '' });
-  const [consent, setConsent] = useState(saved?.consent || { bureau: false, tnc: false });
+  const [form, setForm] = useState(saved?.form || { name: '', mobile: '', email: '', employment: '', salary: '' });
+  const [consent, setConsent] = useState(saved?.consent || { bureau: false, tnc: false, lenderShare: false });
+  const [repaymentMethod, setRepaymentMethod] = useState(saved?.repaymentMethod || '');
+  const [cashOtp, setCashOtp] = useState(['', '', '', '']);
+  const [cashOtpSent, setCashOtpSent] = useState(false);
+  const [cashOtpVerified, setCashOtpVerified] = useState(false);
+  const [cashOtpCode, setCashOtpCode] = useState('');
+  const cashOtpRefs = useRef([]);
   const [kyc, setKyc] = useState(saved?.kyc || { pan: '', dob: '', aadhaar: '' });
-  const [kycSubStep, setKycSubStep] = useState(saved?.kycSubStep || 'pan');
+  const [kycSubStep, setKycSubStep] = useState(saved?.kycSubStep || 'aadhaar');
   const [aadhaarOtp, setAadhaarOtp] = useState(['', '', '', '', '', '']);
   const [aadhaarVerified, setAadhaarVerified] = useState(saved?.aadhaarVerified || false);
   const [aadhaarData, setAadhaarData] = useState(saved?.aadhaarData || null);
@@ -59,11 +73,11 @@ function PaymentPage({ data, theme, onBack }) {
     if (step === 'eligibility') return;
     const session = {
       step, form, consent, kyc, kycSubStep, aadhaarVerified, aadhaarData,
-      selectedOffer, selectedTenure, downpaymentMethod, upiId,
+      selectedOffer, selectedTenure, downpaymentMethod, upiId, repaymentMethod,
       orderId: orderIdRef.current,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  }, [step, form, consent, kyc, kycSubStep, aadhaarVerified, aadhaarData, selectedOffer, selectedTenure, downpaymentMethod, upiId]);
+  }, [step, form, consent, kyc, kycSubStep, aadhaarVerified, aadhaarData, selectedOffer, selectedTenure, downpaymentMethod, upiId, repaymentMethod]);
 
   // Clear session on success or when going back to shopping
   const handleBack = () => {
@@ -96,7 +110,10 @@ function PaymentPage({ data, theme, onBack }) {
     const idx = STEPS.indexOf(step);
     if (idx < STEPS.length - 1) {
       const nextStep = STEPS[idx + 1];
-      if (nextStep === 'success') clearSession();
+      if (nextStep === 'success') {
+        clearSession();
+        if (onOrderComplete) onOrderComplete();
+      }
       setStep(nextStep);
     }
   };
@@ -134,6 +151,34 @@ function PaymentPage({ data, theme, onBack }) {
   const handleSendAadhaarOtp = () => {
     setKycSubStep('aadhaar-otp');
   };
+
+  const handleCashOtpChange = (index, value) => {
+    if (value.length > 1) return;
+    const newOtp = [...cashOtp];
+    newOtp[index] = value;
+    setCashOtp(newOtp);
+    if (value && index < 3) cashOtpRefs.current[index + 1]?.focus();
+  };
+
+  const handleCashOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !cashOtp[index] && index > 0) cashOtpRefs.current[index - 1]?.focus();
+  };
+
+  const handleSendCashOtp = () => {
+    // Generate a 4-digit code and "send" to agent
+    const code = '1111';
+    setCashOtpCode(code);
+    setCashOtpSent(true);
+  };
+
+  const handleVerifyCashOtp = () => {
+    const entered = cashOtp.join('');
+    if (entered === cashOtpCode) {
+      setCashOtpVerified(true);
+    }
+  };
+
+  const isCashOtpComplete = cashOtp.every(d => d !== '');
 
   const downloadReceipt = () => {
     const orderId = orderIdRef.current;
@@ -215,12 +260,12 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
     }, 2000);
   };
 
-  const isDetailsValid = form.name.trim().length >= 2 && /^[6-9]\d{9}$/.test(form.mobile);
-  const isConsentValid = consent.bureau && consent.tnc;
-  const isPanValid = /^[A-Z]{5}\d{4}[A-Z]$/.test(kyc.pan.toUpperCase()) && kyc.dob;
+  const isDetailsValid = form.name.trim().length >= 2 && /^[6-9]\d{9}$/.test(form.mobile) && form.employment && form.salary;
+  const isConsentValid = consent.bureau && consent.tnc && consent.lenderShare;
+  const fetchedPan = `BXYPK${form.mobile.slice(-4) || '0000'}R`;
   const isAadhaarValid = /^\d{12}$/.test(kyc.aadhaar);
   const isAadhaarOtpComplete = aadhaarOtp.every(d => d !== '');
-  const isKycValid = isPanValid && aadhaarVerified;
+  const isKycValid = aadhaarVerified;
   const isOtpComplete = otp.every(d => d !== '');
   const downpaymentAmount = selectedOffer ? Math.round(amount * 0.1) : 0;
   const loanAmount = amount - downpaymentAmount;
@@ -242,9 +287,14 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
         </button>
         <div className="checkout-header-info">
           <h1 className="checkout-title">{step === 'success' ? 'Payment Successful' : 'Checkout'}</h1>
-          <span className="checkout-merchant">Powered by Juspay</span>
+          <span className="checkout-merchant">
+            <JuspayLogo size={18} />
+            Powered by Juspay
+          </span>
         </div>
-        <div className="checkout-secure">🔒</div>
+        <div className="checkout-secure">
+          <svg width="18" height="18" fill="none" stroke="#2B6CB0" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
       </header>
 
       {/* Progress */}
@@ -288,6 +338,24 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
               <label className="form-label">Email <span className="optional">(optional)</span></label>
               <input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
+            <div className="form-group">
+              <label className="form-label">Employment Type</label>
+              <div className="employment-options">
+                {['Salaried', 'Self-Employed', 'Business', 'Freelancer'].map(type => (
+                  <button key={type} className={`employment-chip ${form.employment === type ? 'selected' : ''}`} onClick={() => setForm({ ...form, employment: type })}>
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Monthly Income</label>
+              <div className="form-input-prefix">
+                <span className="input-prefix">₹</span>
+                <input className="form-input" type="text" inputMode="numeric" placeholder="e.g. 50000" value={form.salary} onChange={e => setForm({ ...form, salary: e.target.value.replace(/\D/g, '') })} />
+              </div>
+              <span className="form-hint">Approximate monthly take-home salary</span>
+            </div>
             <button className="checkout-btn" disabled={!isDetailsValid} onClick={goNext}>Continue</button>
           </div>
         )}
@@ -310,6 +378,21 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
                 <input type="checkbox" checked={consent.bureau} onChange={e => setConsent({ ...consent, bureau: e.target.checked })} />
                 <span className="checkmark"></span>
                 <span>I authorize {merchant} and its lending partners to access my credit report from CIBIL/Experian/CRIF</span>
+              </label>
+            </div>
+            <div className="consent-card">
+              <div className="consent-icon">🏦</div>
+              <h3>Lender Data Sharing</h3>
+              <p>Your personal information (name, contact, income, KYC documents) will be shared with our lending partners — Fibe, TVS Credit, and DMI Finance — to evaluate and process your loan application.</p>
+              <div className="consent-lender-logos">
+                {LENDERS.map(l => (
+                  <span key={l.id} className="consent-lender-tag">{l.logo} {l.name}</span>
+                ))}
+              </div>
+              <label className="consent-checkbox">
+                <input type="checkbox" checked={consent.lenderShare} onChange={e => setConsent({ ...consent, lenderShare: e.target.checked })} />
+                <span className="checkmark"></span>
+                <span>I consent to sharing my data with the above lending partners for loan processing</span>
               </label>
             </div>
             <div className="consent-card">
@@ -378,7 +461,7 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
               {LENDERS.map(lender => (
                 <div key={lender.id} className={`lender-card ${selectedOffer === lender.id ? 'selected' : ''}`} onClick={() => { setSelectedOffer(lender.id); setSelectedTenure(null); }}>
                   <div className="lender-top">
-                    <span className="lender-logo">{lender.logo}</span>
+                    <span className="lender-logo" style={{ background: lender.logoColor }}>{lender.logo}</span>
                     <div className="lender-info">
                       <span className="lender-name">{lender.name}</span>
                       <span className="lender-rate">From {lender.rates[0]}% p.a.</span>
@@ -417,57 +500,24 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
               <span className="step-number">3</span>
               <div>
                 <h2 className="step-title">KYC Verification</h2>
-                <p className="step-desc">PAN + Aadhaar oKYC for instant verification</p>
+                <p className="step-desc">Aadhaar oKYC for instant verification</p>
               </div>
             </div>
             <div className="kyc-selected-lender">
-              <span>{selectedLender?.logo}</span>
+              <span className="lender-logo-sm" style={{ background: selectedLender?.logoColor }}>{selectedLender?.logo}</span>
               <span className="kyc-lender-name">{selectedLender?.name}</span>
               <span className="kyc-tenure">{selectedTenure} months @ {selectedRate === 0 ? 'No Cost' : `${selectedRate}%`}</span>
             </div>
 
-            {/* KYC Progress Tabs */}
-            <div className="kyc-tabs">
-              <div className={`kyc-tab ${kycSubStep === 'pan' ? 'active' : isPanValid ? 'done' : ''}`}>
-                <span className="kyc-tab-num">{isPanValid ? '✓' : '1'}</span>
-                <span>PAN</span>
-              </div>
-              <div className="kyc-tab-line"></div>
-              <div className={`kyc-tab ${kycSubStep.startsWith('aadhaar') ? 'active' : aadhaarVerified ? 'done' : ''}`}>
-                <span className="kyc-tab-num">{aadhaarVerified ? '✓' : '2'}</span>
-                <span>Aadhaar oKYC</span>
-              </div>
+            {/* Auto-fetched PAN */}
+            <div className="kyc-pan-verified">
+              <span className="pan-check">✓</span>
+              <span>PAN fetched via mobile: <strong>{fetchedPan}</strong></span>
             </div>
-
-            {/* Sub-step: PAN */}
-            {kycSubStep === 'pan' && (
-              <div className="kyc-substep">
-                <div className="form-group">
-                  <label className="form-label">PAN Number</label>
-                  <input className="form-input" type="text" placeholder="ABCDE1234F" maxLength={10} value={kyc.pan} onChange={e => setKyc({ ...kyc, pan: e.target.value.toUpperCase() })} style={{ textTransform: 'uppercase' }} />
-                  <span className="form-hint">10-character alphanumeric PAN</span>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Date of Birth</label>
-                  <input className="form-input" type="date" value={kyc.dob} onChange={e => setKyc({ ...kyc, dob: e.target.value })} />
-                </div>
-                <div className="kyc-info-box">
-                  <svg width="16" height="16" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-                  <span>PAN verified instantly via NSDL</span>
-                </div>
-                <button className="checkout-btn" disabled={!isPanValid} onClick={() => setKycSubStep('aadhaar')}>
-                  Verify PAN & Continue
-                </button>
-              </div>
-            )}
 
             {/* Sub-step: Aadhaar Number */}
             {kycSubStep === 'aadhaar' && (
               <div className="kyc-substep">
-                <div className="kyc-pan-verified">
-                  <span className="pan-check">✓</span>
-                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
-                </div>
                 <div className="aadhaar-header">
                   <div className="aadhaar-logo">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--primary)" strokeWidth="1.5"/><text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--primary-dark)">A</text></svg>
@@ -498,10 +548,6 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
             {/* Sub-step: Aadhaar OTP */}
             {kycSubStep === 'aadhaar-otp' && (
               <div className="kyc-substep">
-                <div className="kyc-pan-verified">
-                  <span className="pan-check">✓</span>
-                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
-                </div>
                 <div className="aadhaar-otp-section">
                   <div className="aadhaar-otp-icon">
                     <svg width="40" height="40" fill="none" stroke="var(--primary)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -529,10 +575,6 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
             {/* Sub-step: Aadhaar Verified */}
             {kycSubStep === 'aadhaar-verified' && aadhaarData && (
               <div className="kyc-substep">
-                <div className="kyc-pan-verified">
-                  <span className="pan-check">✓</span>
-                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
-                </div>
                 <div className="aadhaar-verified-card">
                   <div className="aadhaar-verified-header">
                     <span className="aadhaar-verified-badge">✓ Aadhaar oKYC Complete</span>
@@ -582,7 +624,7 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
             </div>
             <div className="final-offer-card">
               <div className="final-offer-header">
-                <span>{selectedLender?.logo}</span>
+                <span className="lender-logo-sm" style={{ background: selectedLender?.logoColor }}>{selectedLender?.logo}</span>
                 <span className="final-lender-name">{selectedLender?.name}</span>
                 <span className="final-verified">✓ Verified</span>
               </div>
@@ -636,8 +678,12 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
               <span className="dp-label">Due now</span>
             </div>
             <div className="dp-methods">
-              {[{ id: 'upi', name: 'UPI', icon: '📱', desc: 'Google Pay, PhonePe, Paytm' }, { id: 'card', name: 'Debit Card', icon: '💳', desc: 'Visa, Mastercard, RuPay' }].map(m => (
-                <div key={m.id} className={`dp-method ${downpaymentMethod === m.id ? 'selected' : ''}`} onClick={() => setDownpaymentMethod(m.id)}>
+              {[
+                { id: 'upi', name: 'UPI', icon: '📱', desc: 'Google Pay, PhonePe, Paytm' },
+                { id: 'card', name: 'Debit Card', icon: '💳', desc: 'Visa, Mastercard, RuPay' },
+                { id: 'cash', name: 'Cash at Store', icon: '💵', desc: 'Pay cash to store agent' },
+              ].map(m => (
+                <div key={m.id} className={`dp-method ${downpaymentMethod === m.id ? 'selected' : ''}`} onClick={() => { setDownpaymentMethod(m.id); setCashOtpSent(false); setCashOtpVerified(false); setCashOtp(['','','','']); }}>
                   <span className="dp-method-icon">{m.icon}</span>
                   <div className="dp-method-info">
                     <span className="dp-method-name">{m.name}</span>
@@ -653,17 +699,204 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
                 <input className="form-input" type="text" placeholder="yourname@upi" value={upiId} onChange={e => setUpiId(e.target.value)} />
               </div>
             )}
-            <button className="checkout-btn" disabled={downpaymentMethod === 'upi' && !upiId.includes('@')} onClick={goNext}>
-              Pay {formatCurrency(downpaymentAmount)}
+            {downpaymentMethod === 'cash' && (
+              <div className="cash-dp-section">
+                {!cashOtpSent && (
+                  <div className="cash-instructions">
+                    <div className="cash-step-card">
+                      <span className="cash-step-num">1</span>
+                      <div>
+                        <strong>Hand over {formatCurrency(downpaymentAmount)} cash</strong>
+                        <p>Give the exact amount to the store agent at the counter</p>
+                      </div>
+                    </div>
+                    <div className="cash-step-card">
+                      <span className="cash-step-num">2</span>
+                      <div>
+                        <strong>Agent confirms collection</strong>
+                        <p>The agent will enter a verification OTP to confirm cash received</p>
+                      </div>
+                    </div>
+                    <button className="checkout-btn" onClick={handleSendCashOtp}>
+                      Generate Agent OTP
+                    </button>
+                  </div>
+                )}
+                {cashOtpSent && !cashOtpVerified && (
+                  <div className="cash-otp-section">
+                    <div className="cash-otp-display">
+                      <div className="cash-otp-badge">OTP Sent to Agent</div>
+                      <p className="cash-otp-hint">A 4-digit verification code has been sent to the store agent's device. Ask the agent to enter it below to confirm cash collection.</p>
+                    </div>
+                    <div className="cash-otp-divider">
+                      <span>Agent enters OTP below</span>
+                    </div>
+                    <div className="otp-inputs">
+                      {cashOtp.map((digit, i) => (
+                        <input key={i} ref={el => cashOtpRefs.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1} value={digit} onChange={e => handleCashOtpChange(i, e.target.value)} onKeyDown={e => handleCashOtpKeyDown(i, e)} />
+                      ))}
+                    </div>
+                    {isCashOtpComplete && cashOtp.join('') !== cashOtpCode && (
+                      <p className="cash-otp-error">Incorrect code. Please check and try again.</p>
+                    )}
+                    <button className="checkout-btn" disabled={!isCashOtpComplete} onClick={handleVerifyCashOtp}>
+                      Confirm Cash Received
+                    </button>
+                  </div>
+                )}
+                {cashOtpVerified && (
+                  <div className="cash-verified">
+                    <div className="cash-verified-icon">
+                      <svg width="32" height="32" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h4>Cash Collected Successfully</h4>
+                    <p>{formatCurrency(downpaymentAmount)} received and confirmed by agent</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              className="checkout-btn"
+              style={{ display: downpaymentMethod === 'cash' && !cashOtpVerified ? 'none' : undefined }}
+              disabled={
+                (downpaymentMethod === 'upi' && !upiId.includes('@')) ||
+                (downpaymentMethod === 'cash' && !cashOtpVerified)
+              }
+              onClick={goNext}
+            >
+              {downpaymentMethod === 'cash' ? 'Continue' : `Pay ${formatCurrency(downpaymentAmount)}`}
             </button>
           </div>
         )}
 
-        {/* Step 8: KFS + OTP */}
-        {step === 'kfs' && (
+        {/* Step 8: Repayment Setup */}
+        {step === 'repayment' && (
           <div className="checkout-step">
             <div className="step-header">
               <span className="step-number">5</span>
+              <div>
+                <h2 className="step-title">Repayment Setup</h2>
+                <p className="step-desc">Set up auto-debit for monthly EMI payments</p>
+              </div>
+            </div>
+            <div className="repayment-summary">
+              <div className="repayment-summary-row">
+                <span>EMI Amount</span>
+                <span className="repayment-emi">{formatCurrency(emiAmount)}/month</span>
+              </div>
+              <div className="repayment-summary-row">
+                <span>Tenure</span>
+                <span>{selectedTenure} months</span>
+              </div>
+              <div className="repayment-summary-row">
+                <span>Lender</span>
+                <span>{selectedLender?.name}</span>
+              </div>
+            </div>
+
+            <h3 className="repayment-section-title">Choose Mandate Type</h3>
+            <div className="repayment-methods">
+              <div className={`repayment-method ${repaymentMethod === 'upi-autopay' ? 'selected' : ''}`} onClick={() => setRepaymentMethod('upi-autopay')}>
+                <div className="repayment-method-icon">📱</div>
+                <div className="repayment-method-info">
+                  <span className="repayment-method-name">UPI AutoPay</span>
+                  <span className="repayment-method-desc">Auto-debit from your UPI-linked bank account. Supports Google Pay, PhonePe, Paytm, BHIM.</span>
+                </div>
+                <div className="lender-radio">{repaymentMethod === 'upi-autopay' && <div className="radio-dot"></div>}</div>
+              </div>
+              <div className={`repayment-method ${repaymentMethod === 'enach' ? 'selected' : ''}`} onClick={() => setRepaymentMethod('enach')}>
+                <div className="repayment-method-icon">🏦</div>
+                <div className="repayment-method-info">
+                  <span className="repayment-method-name">eNACH</span>
+                  <span className="repayment-method-desc">Electronic NACH mandate registered with your bank. Auto-debits on a fixed date each month.</span>
+                </div>
+                <div className="lender-radio">{repaymentMethod === 'enach' && <div className="radio-dot"></div>}</div>
+              </div>
+              <div className={`repayment-method ${repaymentMethod === 'debit-card' ? 'selected' : ''}`} onClick={() => setRepaymentMethod('debit-card')}>
+                <div className="repayment-method-icon">💳</div>
+                <div className="repayment-method-info">
+                  <span className="repayment-method-name">Debit Card Standing Instruction</span>
+                  <span className="repayment-method-desc">Set up recurring payment via Visa/Mastercard/RuPay debit card mandate.</span>
+                </div>
+                <div className="lender-radio">{repaymentMethod === 'debit-card' && <div className="radio-dot"></div>}</div>
+              </div>
+            </div>
+
+            {repaymentMethod && (
+              <div className="repayment-details-box">
+                {repaymentMethod === 'upi-autopay' && (
+                  <>
+                    <h4>UPI AutoPay Setup</h4>
+                    <p>A mandate request will be sent to your UPI app. Approve the auto-debit of <strong>{formatCurrency(emiAmount)}</strong> on the 5th of every month.</p>
+                    <div className="repayment-info-row">
+                      <span>Max Amount</span><span>{formatCurrency(emiAmount)}</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Frequency</span><span>Monthly</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Debit Date</span><span>5th of every month</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Valid Until</span><span>{selectedTenure} months from activation</span>
+                    </div>
+                  </>
+                )}
+                {repaymentMethod === 'enach' && (
+                  <>
+                    <h4>eNACH Mandate Registration</h4>
+                    <p>You will be redirected to your bank's net banking portal to authorize the eNACH mandate for <strong>{formatCurrency(emiAmount)}</strong> monthly.</p>
+                    <div className="repayment-info-row">
+                      <span>UMRN</span><span>Auto-generated</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Max Amount</span><span>{formatCurrency(emiAmount)}</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Frequency</span><span>Monthly</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Debit Date</span><span>5th of every month</span>
+                    </div>
+                  </>
+                )}
+                {repaymentMethod === 'debit-card' && (
+                  <>
+                    <h4>Debit Card Standing Instruction</h4>
+                    <p>A standing instruction of <strong>{formatCurrency(emiAmount)}</strong> will be set up on your debit card for monthly auto-debit.</p>
+                    <div className="repayment-info-row">
+                      <span>Card Networks</span><span>Visa / Mastercard / RuPay</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Max Amount</span><span>{formatCurrency(emiAmount)}</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Frequency</span><span>Monthly</span>
+                    </div>
+                    <div className="repayment-info-row">
+                      <span>Debit Date</span><span>5th of every month</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="kyc-info-box">
+              <svg width="16" height="16" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+              <span>Mandate setup is required by RBI guidelines for EMI-based lending. You can cancel anytime after loan closure.</span>
+            </div>
+
+            <button className="checkout-btn" disabled={!repaymentMethod} onClick={goNext}>
+              Setup Mandate & Continue
+            </button>
+          </div>
+        )}
+
+        {/* Step 9: KFS + OTP */}
+        {step === 'kfs' && (
+          <div className="checkout-step">
+            <div className="step-header">
+              <span className="step-number">6</span>
               <div>
                 <h2 className="step-title">Key Fact Statement</h2>
                 <p className="step-desc">Review and confirm with OTP</p>
@@ -736,7 +969,7 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
       {/* Footer */}
       {step !== 'success' && (
         <div className="checkout-footer">
-          <span>🔒 Secured by Juspay</span>
+          <span className="footer-secured"><JuspayLogo size={14} /> Secured by Juspay</span>
           <span>•</span>
           <span>PCI DSS Compliant</span>
           <span>•</span>

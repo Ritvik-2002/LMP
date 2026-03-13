@@ -18,7 +18,13 @@
       "Bash(rm -rf /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/node_modules /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/package-lock.json && source ~/.nvm/nvm.sh && nvm use 22 && cd /Users/prakhar.prakash/Desktop/Clones/LMP/frontend && npm install 2>&1 | tail -5)",
       "Bash(ls /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/src/components/ && source ~/.nvm/nvm.sh && nvm use 22 && npx vite build 2>&1)",
       "WebSearch",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebFetch(domain:claude.com)",
+      "Bash(open /Users/prakhar.prakash/Desktop/Clones/LMP/frontend/public/product-doc.html)",
+      "Bash(pip3 install:*)",
+      "Bash(cd /Users/prakhar.prakash/Desktop/Clones/LMP && python3 generate_ppt.py 2>&1)",
+      "Bash(open /Users/prakhar.prakash/Desktop/Clones/LMP/LMP_Product_Document.pptx)",
+      "WebFetch(domain:theorg.com)"
     ]
   }
 }

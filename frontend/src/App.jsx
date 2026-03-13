@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getMerchantTheme } from './themes/merchantThemes';
 import PaymentPage from './components/PaymentPage';
@@ -100,8 +100,93 @@ function App() {
     else sessionStorage.removeItem('checkout_active');
   };
 
+  const [cart, setCart] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
+  const [cartSessionId, setCartSessionId] = useState(() => sessionStorage.getItem('cart_session_id'));
+  const [showCart, setShowCart] = useState(false);
+
   const [aiReasons, setAiReasons] = useState({});
   const [reasonsLoading, setReasonsLoading] = useState(false);
+
+  // Sync cart session ID to sessionStorage
+  const updateCartState = useCallback((data) => {
+    setCart(data.cart);
+    setCartCount(data.cartCount);
+    setCartTotal(data.cartTotal);
+    if (data.sessionId) {
+      setCartSessionId(data.sessionId);
+      sessionStorage.setItem('cart_session_id', data.sessionId);
+    }
+  }, []);
+
+  // Load cart on mount
+  useEffect(() => {
+    if (cartSessionId) {
+      fetch(`/api/cart/${cartSessionId}`)
+        .then(r => r.json())
+        .then(updateCartState)
+        .catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isInCart = (productId, colorName, storageVal) => {
+    return cart.some(item => item.id === productId && item.color === colorName && item.storage === storageVal);
+  };
+
+  const addToCart = useCallback(async (product, color, storage) => {
+    const res = await fetch('/api/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: cartSessionId,
+        product: {
+          id: product.id,
+          name: `${product.brand} ${product.model}`,
+          brand: product.brand,
+          price: product.price,
+          mrp: product.mrp,
+          color: color.name,
+          color_hex: color.hex,
+          image_bg: color.image_bg,
+          storage,
+        }
+      })
+    });
+    const data = await res.json();
+    updateCartState(data);
+  }, [cartSessionId, updateCartState]);
+
+  const removeFromCart = useCallback(async (item) => {
+    const res = await fetch('/api/cart/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: cartSessionId,
+        productId: item.id,
+        storage: item.storage,
+        color: item.color,
+      })
+    });
+    const data = await res.json();
+    updateCartState(data);
+  }, [cartSessionId, updateCartState]);
+
+  const updateQty = useCallback(async (item, qty) => {
+    const res = await fetch('/api/cart/update-qty', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: cartSessionId,
+        productId: item.id,
+        storage: item.storage,
+        color: item.color,
+        qty,
+      })
+    });
+    const data = await res.json();
+    updateCartState(data);
+  }, [cartSessionId, updateCartState]);
 
   useEffect(() => {
     // Reset selections when product changes
@@ -173,7 +258,24 @@ function App() {
   if (showPayment) {
     return (
       <>
-        <PaymentPage data={{ ...data, product_name: `${product.brand} ${product.model}`, loan_request: { ...data.loan_request, amount: product.price } }} theme={theme} onBack={() => setShowPaymentPersisted(false)} />
+        <PaymentPage data={{ ...data, product_name: `${product.brand} ${product.model}`, loan_request: { ...data.loan_request, amount: product.price } }} theme={theme} onBack={() => setShowPaymentPersisted(false)} onOrderComplete={() => {
+          // Clear cart on successful order
+          if (cartSessionId) {
+            fetch(`/api/cart/${cartSessionId}`, { method: 'DELETE' })
+              .then(r => r.json())
+              .then(updateCartState)
+              .catch(() => {});
+          }
+        }} />
+        {!showChat && (
+          <button className="ai-fab" onClick={() => setShowChat(true)}>
+            <span className="ai-fab-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </span>
+            <span className="ai-fab-label">AI</span>
+            <span className="ai-fab-pulse"></span>
+          </button>
+        )}
         <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
       </>
     );
@@ -192,8 +294,9 @@ function App() {
             <button className="nav-icon-btn">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
-            <button className="nav-icon-btn cart-btn">
+            <button className="nav-icon-btn cart-btn" onClick={() => setShowCart(true)}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
             </button>
           </div>
         </div>
@@ -337,18 +440,25 @@ function App() {
 
             {/* Action Buttons */}
             <div className="action-row">
-              <button className="btn-add-cart" onClick={() => setShowPaymentPersisted(true)}>Add to Cart</button>
+              {isInCart(product.id, color.name, storage) ? (
+                <button
+                  className="btn-add-cart added"
+                  onClick={() => removeFromCart({ id: product.id, color: color.name, storage })}
+                >
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  Added — Remove
+                </button>
+              ) : (
+                <button
+                  className="btn-add-cart"
+                  onClick={() => addToCart(product, color, storage)}
+                >
+                  Add to Cart
+                </button>
+              )}
               <button className="btn-buy-now" onClick={() => setShowPaymentPersisted(true)}>Buy Now</button>
             </div>
 
-            {/* AI Assistant Toggle */}
-            <button className="ai-assist-btn" onClick={() => setShowChat(true)}>
-              <span className="ai-icon">
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              </span>
-              Ask AI Assistant
-              <span className="ai-badge">AI</span>
-            </button>
           </div>
         </div>
 
@@ -517,9 +627,79 @@ function App() {
         </div>
       </main>
 
+      {/* Cart Drawer */}
+      <div className={`cart-backdrop ${showCart ? 'visible' : ''}`} onClick={() => setShowCart(false)} />
+      <div className={`cart-drawer ${showCart ? 'open' : ''}`}>
+        <div className="cart-drawer-header">
+          <h3>Your Cart {cartCount > 0 && <span className="cart-header-count">{cartCount} item{cartCount > 1 ? 's' : ''}</span>}</h3>
+          <button className="cart-drawer-close" onClick={() => setShowCart(false)}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        {cart.length === 0 ? (
+          <div className="cart-empty">
+            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            <p>Your cart is empty</p>
+            <span>Browse products and add items to get started</span>
+          </div>
+        ) : (
+          <>
+            <div className="cart-items">
+              {cart.map((item, i) => {
+                const itemDiscount = item.mrp ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0;
+                return (
+                  <div key={`${item.id}-${item.storage}-${item.color}-${i}`} className="cart-item">
+                    <div className="cart-item-image" style={{ background: item.image_bg || '#f0f0f0' }}>
+                      <PhoneImage color={item.color_hex || '#888'} brand={item.brand} size="small" />
+                    </div>
+                    <div className="cart-item-info">
+                      <h4>{item.name}</h4>
+                      <span className="cart-item-variant">{item.color} / {item.storage >= 1024 ? `${item.storage/1024} TB` : `${item.storage} GB`}</span>
+                      <div className="cart-item-price-row">
+                        <span className="cart-item-price">{formatCurrency(item.price)}</span>
+                        {itemDiscount > 0 && <span className="cart-item-discount">{itemDiscount}% off</span>}
+                      </div>
+                      <div className="cart-item-qty">
+                        <button onClick={() => updateQty(item, item.qty - 1)}>-</button>
+                        <span>{item.qty}</span>
+                        <button onClick={() => updateQty(item, item.qty + 1)}>+</button>
+                      </div>
+                    </div>
+                    <button className="cart-item-remove" onClick={() => removeFromCart(item)}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14"/></svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="cart-footer">
+              <div className="cart-total-row">
+                <span>Total</span>
+                <span className="cart-total-price">{formatCurrency(cartTotal)}</span>
+              </div>
+              <button className="cart-checkout-btn" onClick={() => { setShowCart(false); setShowPaymentPersisted(true); }}>
+                Proceed to Checkout
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
       <footer className="site-footer">
         <p>{data.merchant.merchant_name} &copy; 2026. All rights reserved.</p>
       </footer>
+
+      {/* Floating AI Chat Button */}
+      {!showChat && (
+        <button className="ai-fab" onClick={() => setShowChat(true)}>
+          <span className="ai-fab-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </span>
+          <span className="ai-fab-label">AI</span>
+          <span className="ai-fab-pulse"></span>
+        </button>
+      )}
 
       {/* AI Chat Side Panel */}
       <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
