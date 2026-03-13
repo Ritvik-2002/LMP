@@ -88,11 +88,18 @@ function App() {
   const [data, setData] = useState(null);
   const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showPayment, setShowPayment] = useState(false);
+  const [showPayment, setShowPayment] = useState(() => sessionStorage.getItem('checkout_active') === 'true');
   const [showChat, setShowChat] = useState(false);
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedStorage, setSelectedStorage] = useState(null);
   const [compareWith, setCompareWith] = useState(null);
+  // Sync checkout state with sessionStorage
+  const setShowPaymentPersisted = (val) => {
+    setShowPayment(val);
+    if (val) sessionStorage.setItem('checkout_active', 'true');
+    else sessionStorage.removeItem('checkout_active');
+  };
+
   const [aiReasons, setAiReasons] = useState({});
   const [reasonsLoading, setReasonsLoading] = useState(false);
 
@@ -166,7 +173,7 @@ function App() {
   if (showPayment) {
     return (
       <>
-        <PaymentPage data={{ ...data, product_name: `${product.brand} ${product.model}`, loan_request: { ...data.loan_request, amount: product.price } }} theme={theme} onBack={() => setShowPayment(false)} />
+        <PaymentPage data={{ ...data, product_name: `${product.brand} ${product.model}`, loan_request: { ...data.loan_request, amount: product.price } }} theme={theme} onBack={() => setShowPaymentPersisted(false)} />
         <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
       </>
     );
@@ -330,8 +337,8 @@ function App() {
 
             {/* Action Buttons */}
             <div className="action-row">
-              <button className="btn-add-cart" onClick={() => setShowPayment(true)}>Add to Cart</button>
-              <button className="btn-buy-now" onClick={() => setShowPayment(true)}>Buy Now</button>
+              <button className="btn-add-cart" onClick={() => setShowPaymentPersisted(true)}>Add to Cart</button>
+              <button className="btn-buy-now" onClick={() => setShowPaymentPersisted(true)}>Buy Now</button>
             </div>
 
             {/* AI Assistant Toggle */}

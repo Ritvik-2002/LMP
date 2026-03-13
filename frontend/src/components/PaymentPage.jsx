@@ -18,19 +18,59 @@ const calculateEmi = (principal, months, rate) => {
   return Math.round((principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1));
 };
 
+// Session persistence helpers
+const STORAGE_KEY = 'checkout_session';
+
+const loadSession = () => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch { return null; }
+};
+
+const clearSession = () => sessionStorage.removeItem(STORAGE_KEY);
+
 function PaymentPage({ data, theme, onBack }) {
-  const [step, setStep] = useState('details');
-  const [form, setForm] = useState({ name: '', mobile: '', email: '' });
-  const [consent, setConsent] = useState({ bureau: false, tnc: false });
-  const [kyc, setKyc] = useState({ pan: '', dob: '' });
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [selectedTenure, setSelectedTenure] = useState(null);
-  const [downpaymentMethod, setDownpaymentMethod] = useState('upi');
-  const [upiId, setUpiId] = useState('');
+  const saved = useRef(loadSession()).current;
+
+  const [step, setStep] = useState(saved?.step || 'details');
+  const [form, setForm] = useState(saved?.form || { name: '', mobile: '', email: '' });
+  const [consent, setConsent] = useState(saved?.consent || { bureau: false, tnc: false });
+  const [kyc, setKyc] = useState(saved?.kyc || { pan: '', dob: '', aadhaar: '' });
+  const [kycSubStep, setKycSubStep] = useState(saved?.kycSubStep || 'pan');
+  const [aadhaarOtp, setAadhaarOtp] = useState(['', '', '', '', '', '']);
+  const [aadhaarVerified, setAadhaarVerified] = useState(saved?.aadhaarVerified || false);
+  const [aadhaarData, setAadhaarData] = useState(saved?.aadhaarData || null);
+  const [aadhaarLoading, setAadhaarLoading] = useState(false);
+  const aadhaarOtpRefs = useRef([]);
+  const [selectedOffer, setSelectedOffer] = useState(saved?.selectedOffer || null);
+  const [selectedTenure, setSelectedTenure] = useState(saved?.selectedTenure || null);
+  const [downpaymentMethod, setDownpaymentMethod] = useState(saved?.downpaymentMethod || 'upi');
+  const [upiId, setUpiId] = useState(saved?.upiId || '');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [kfsAccepted, setKfsAccepted] = useState(false);
   const [eligibilityProgress, setEligibilityProgress] = useState(0);
   const otpRefs = useRef([]);
+  const orderIdRef = useRef(saved?.orderId || `ORD${Date.now().toString().slice(-8)}`);
+
+  // Persist checkout state on every change
+  useEffect(() => {
+    // Don't persist eligibility (animated) or success (done)
+    if (step === 'eligibility') return;
+    const session = {
+      step, form, consent, kyc, kycSubStep, aadhaarVerified, aadhaarData,
+      selectedOffer, selectedTenure, downpaymentMethod, upiId,
+      orderId: orderIdRef.current,
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  }, [step, form, consent, kyc, kycSubStep, aadhaarVerified, aadhaarData, selectedOffer, selectedTenure, downpaymentMethod, upiId]);
+
+  // Clear session on success or when going back to shopping
+  const handleBack = () => {
+    clearSession();
+    sessionStorage.removeItem('checkout_active');
+    onBack();
+  };
 
   const product = data.product_id;
   const amount = data.loan_request?.amount || 129999;
@@ -54,11 +94,15 @@ function PaymentPage({ data, theme, onBack }) {
 
   const goNext = () => {
     const idx = STEPS.indexOf(step);
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
+    if (idx < STEPS.length - 1) {
+      const nextStep = STEPS[idx + 1];
+      if (nextStep === 'success') clearSession();
+      setStep(nextStep);
+    }
   };
 
   const goBack = () => {
-    if (step === 'details') { onBack(); return; }
+    if (step === 'details') { handleBack(); return; }
     const idx = STEPS.indexOf(step);
     if (idx > 0) setStep(STEPS[idx - 1]);
   };
@@ -75,9 +119,108 @@ function PaymentPage({ data, theme, onBack }) {
     if (e.key === 'Backspace' && !otp[index] && index > 0) otpRefs.current[index - 1]?.focus();
   };
 
+  const handleAadhaarOtpChange = (index, value) => {
+    if (value.length > 1) return;
+    const newOtp = [...aadhaarOtp];
+    newOtp[index] = value;
+    setAadhaarOtp(newOtp);
+    if (value && index < 5) aadhaarOtpRefs.current[index + 1]?.focus();
+  };
+
+  const handleAadhaarOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !aadhaarOtp[index] && index > 0) aadhaarOtpRefs.current[index - 1]?.focus();
+  };
+
+  const handleSendAadhaarOtp = () => {
+    setKycSubStep('aadhaar-otp');
+  };
+
+  const downloadReceipt = () => {
+    const orderId = orderIdRef.current;
+    const date = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Receipt - #${orderId}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:24px}
+.receipt{max-width:480px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.08);overflow:hidden}
+.receipt-header{background:#1a1a2e;color:#fff;padding:24px;text-align:center}
+.receipt-header h1{font-size:18px;margin-bottom:4px}
+.receipt-header p{font-size:12px;opacity:0.7}
+.receipt-badge{display:inline-block;background:#16a34a;color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;margin:20px 0 8px}
+.receipt-body{padding:24px}
+.receipt-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.receipt-row:last-child{border-bottom:none}
+.receipt-row span:first-child{color:#888}
+.receipt-row span:last-child{font-weight:600;color:#1a1a2e}
+.receipt-total{background:#f8f9fa;margin:12px -24px 0;padding:14px 24px;font-weight:700}
+.receipt-total span:last-child{color:#12DAA8}
+.receipt-footer{text-align:center;padding:16px 24px 24px;font-size:11px;color:#999}
+.receipt-footer p{margin-bottom:4px}
+@media print{body{background:#fff;padding:0}.receipt{box-shadow:none;border-radius:0}}
+</style></head><body>
+<div class="receipt">
+<div class="receipt-header">
+<h1>${merchant}</h1>
+<p>Powered by Juspay</p>
+</div>
+<div class="receipt-body">
+<div style="text-align:center"><span class="receipt-badge">Payment Successful</span></div>
+<div class="receipt-row"><span>Order ID</span><span>#${orderId}</span></div>
+<div class="receipt-row"><span>Date</span><span>${date}, ${time}</span></div>
+<div class="receipt-row"><span>Customer</span><span>${form.name}</span></div>
+<div class="receipt-row"><span>Mobile</span><span>+91 ${form.mobile}</span></div>
+<div class="receipt-row"><span>Product</span><span>${productName}</span></div>
+<div class="receipt-row"><span>Product Price</span><span>${formatCurrency(amount)}</span></div>
+<div class="receipt-row"><span>Lender</span><span>${selectedLender?.name || '-'}</span></div>
+<div class="receipt-row"><span>Loan Amount</span><span>${formatCurrency(loanAmount)}</span></div>
+<div class="receipt-row"><span>Down Payment</span><span>${formatCurrency(downpaymentAmount)}</span></div>
+<div class="receipt-row"><span>EMI</span><span>${formatCurrency(emiAmount)}/mo x ${selectedTenure} months</span></div>
+<div class="receipt-row"><span>Interest Rate</span><span>${selectedRate === 0 ? 'No Cost EMI' : selectedRate + '% p.a.'}</span></div>
+<div class="receipt-row receipt-total"><span>Total Payable</span><span>${formatCurrency(totalPayable + downpaymentAmount)}</span></div>
+</div>
+<div class="receipt-footer">
+<p>This is a computer-generated receipt.</p>
+<p>For queries, contact ${merchant} support.</p>
+<p>PCI DSS Compliant | RBI Regulated</p>
+</div>
+</div></body></html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Receipt-${orderId}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleVerifyAadhaarOtp = () => {
+    setAadhaarLoading(true);
+    // Simulate UIDAI verification
+    setTimeout(() => {
+      setAadhaarData({
+        name: form.name || 'Prakhar Prakash',
+        dob: kyc.dob || '1995-06-15',
+        gender: 'Male',
+        address: '42, MG Road, Koramangala, Bengaluru, Karnataka - 560034',
+        maskedAadhaar: `XXXX XXXX ${kyc.aadhaar.slice(-4)}`,
+        photo: null,
+      });
+      setAadhaarVerified(true);
+      setAadhaarLoading(false);
+      setKycSubStep('aadhaar-verified');
+    }, 2000);
+  };
+
   const isDetailsValid = form.name.trim().length >= 2 && /^[6-9]\d{9}$/.test(form.mobile);
   const isConsentValid = consent.bureau && consent.tnc;
-  const isKycValid = /^[A-Z]{5}\d{4}[A-Z]$/.test(kyc.pan.toUpperCase()) && kyc.dob;
+  const isPanValid = /^[A-Z]{5}\d{4}[A-Z]$/.test(kyc.pan.toUpperCase()) && kyc.dob;
+  const isAadhaarValid = /^\d{12}$/.test(kyc.aadhaar);
+  const isAadhaarOtpComplete = aadhaarOtp.every(d => d !== '');
+  const isKycValid = isPanValid && aadhaarVerified;
   const isOtpComplete = otp.every(d => d !== '');
   const downpaymentAmount = selectedOffer ? Math.round(amount * 0.1) : 0;
   const loanAmount = amount - downpaymentAmount;
@@ -274,7 +417,7 @@ function PaymentPage({ data, theme, onBack }) {
               <span className="step-number">3</span>
               <div>
                 <h2 className="step-title">KYC Verification</h2>
-                <p className="step-desc">Quick identity verification for loan processing</p>
+                <p className="step-desc">PAN + Aadhaar oKYC for instant verification</p>
               </div>
             </div>
             <div className="kyc-selected-lender">
@@ -282,20 +425,148 @@ function PaymentPage({ data, theme, onBack }) {
               <span className="kyc-lender-name">{selectedLender?.name}</span>
               <span className="kyc-tenure">{selectedTenure} months @ {selectedRate === 0 ? 'No Cost' : `${selectedRate}%`}</span>
             </div>
-            <div className="form-group">
-              <label className="form-label">PAN Number</label>
-              <input className="form-input" type="text" placeholder="ABCDE1234F" maxLength={10} value={kyc.pan} onChange={e => setKyc({ ...kyc, pan: e.target.value.toUpperCase() })} style={{ textTransform: 'uppercase' }} />
-              <span className="form-hint">10-character alphanumeric PAN</span>
+
+            {/* KYC Progress Tabs */}
+            <div className="kyc-tabs">
+              <div className={`kyc-tab ${kycSubStep === 'pan' ? 'active' : isPanValid ? 'done' : ''}`}>
+                <span className="kyc-tab-num">{isPanValid ? '✓' : '1'}</span>
+                <span>PAN</span>
+              </div>
+              <div className="kyc-tab-line"></div>
+              <div className={`kyc-tab ${kycSubStep.startsWith('aadhaar') ? 'active' : aadhaarVerified ? 'done' : ''}`}>
+                <span className="kyc-tab-num">{aadhaarVerified ? '✓' : '2'}</span>
+                <span>Aadhaar oKYC</span>
+              </div>
             </div>
-            <div className="form-group">
-              <label className="form-label">Date of Birth</label>
-              <input className="form-input" type="date" value={kyc.dob} onChange={e => setKyc({ ...kyc, dob: e.target.value })} />
-            </div>
-            <div className="kyc-info-box">
-              <svg width="16" height="16" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-              <span>Your PAN will be verified instantly via NSDL for loan processing</span>
-            </div>
-            <button className="checkout-btn" disabled={!isKycValid} onClick={goNext}>Verify & Continue</button>
+
+            {/* Sub-step: PAN */}
+            {kycSubStep === 'pan' && (
+              <div className="kyc-substep">
+                <div className="form-group">
+                  <label className="form-label">PAN Number</label>
+                  <input className="form-input" type="text" placeholder="ABCDE1234F" maxLength={10} value={kyc.pan} onChange={e => setKyc({ ...kyc, pan: e.target.value.toUpperCase() })} style={{ textTransform: 'uppercase' }} />
+                  <span className="form-hint">10-character alphanumeric PAN</span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Date of Birth</label>
+                  <input className="form-input" type="date" value={kyc.dob} onChange={e => setKyc({ ...kyc, dob: e.target.value })} />
+                </div>
+                <div className="kyc-info-box">
+                  <svg width="16" height="16" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+                  <span>PAN verified instantly via NSDL</span>
+                </div>
+                <button className="checkout-btn" disabled={!isPanValid} onClick={() => setKycSubStep('aadhaar')}>
+                  Verify PAN & Continue
+                </button>
+              </div>
+            )}
+
+            {/* Sub-step: Aadhaar Number */}
+            {kycSubStep === 'aadhaar' && (
+              <div className="kyc-substep">
+                <div className="kyc-pan-verified">
+                  <span className="pan-check">✓</span>
+                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
+                </div>
+                <div className="aadhaar-header">
+                  <div className="aadhaar-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--primary)" strokeWidth="1.5"/><text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--primary-dark)">A</text></svg>
+                  </div>
+                  <div>
+                    <h3 className="aadhaar-title">Aadhaar Offline KYC</h3>
+                    <p className="aadhaar-desc">UIDAI will send an OTP to your Aadhaar-linked mobile number for verification</p>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Aadhaar Number</label>
+                  <input className="form-input" type="text" placeholder="1234 5678 9012" maxLength={14}
+                    value={kyc.aadhaar.replace(/(\d{4})(?=\d)/g, '$1 ')}
+                    onChange={e => setKyc({ ...kyc, aadhaar: e.target.value.replace(/\D/g, '').slice(0, 12) })}
+                  />
+                  <span className="form-hint">12-digit Aadhaar number</span>
+                </div>
+                <div className="kyc-info-box">
+                  <svg width="16" height="16" fill="none" stroke="#f59e0b" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01M5.07 19h13.86c1.1 0 1.78-1.2 1.22-2.14L13.22 4.28a1.38 1.38 0 00-2.44 0L3.85 16.86c-.56.94.12 2.14 1.22 2.14z"/></svg>
+                  <span>An OTP will be sent to your Aadhaar-linked mobile. This is a UIDAI-initiated process, not stored by us.</span>
+                </div>
+                <button className="checkout-btn" disabled={!isAadhaarValid} onClick={handleSendAadhaarOtp}>
+                  Send OTP via UIDAI
+                </button>
+              </div>
+            )}
+
+            {/* Sub-step: Aadhaar OTP */}
+            {kycSubStep === 'aadhaar-otp' && (
+              <div className="kyc-substep">
+                <div className="kyc-pan-verified">
+                  <span className="pan-check">✓</span>
+                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
+                </div>
+                <div className="aadhaar-otp-section">
+                  <div className="aadhaar-otp-icon">
+                    <svg width="40" height="40" fill="none" stroke="var(--primary)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </div>
+                  <h3 className="aadhaar-otp-title">Enter UIDAI OTP</h3>
+                  <p className="aadhaar-otp-desc">
+                    OTP sent to Aadhaar-linked mobile ending in ****{kyc.aadhaar.slice(-4) || '0000'}
+                  </p>
+                  <div className="otp-inputs">
+                    {aadhaarOtp.map((digit, i) => (
+                      <input key={i} ref={el => aadhaarOtpRefs.current[i] = el} className="otp-input" type="text" inputMode="numeric" maxLength={1} value={digit} onChange={e => handleAadhaarOtpChange(i, e.target.value)} onKeyDown={e => handleAadhaarOtpKeyDown(i, e)} />
+                    ))}
+                  </div>
+                  <div className="aadhaar-otp-actions">
+                    <button className="otp-resend" onClick={() => {}}>Resend OTP</button>
+                    <span className="otp-timer">Valid for 10 min</span>
+                  </div>
+                </div>
+                <button className="checkout-btn" disabled={!isAadhaarOtpComplete || aadhaarLoading} onClick={handleVerifyAadhaarOtp}>
+                  {aadhaarLoading ? 'Verifying with UIDAI...' : 'Verify Aadhaar'}
+                </button>
+              </div>
+            )}
+
+            {/* Sub-step: Aadhaar Verified */}
+            {kycSubStep === 'aadhaar-verified' && aadhaarData && (
+              <div className="kyc-substep">
+                <div className="kyc-pan-verified">
+                  <span className="pan-check">✓</span>
+                  <span>PAN verified: <strong>{kyc.pan.toUpperCase()}</strong></span>
+                </div>
+                <div className="aadhaar-verified-card">
+                  <div className="aadhaar-verified-header">
+                    <span className="aadhaar-verified-badge">✓ Aadhaar oKYC Complete</span>
+                  </div>
+                  <div className="aadhaar-verified-details">
+                    <div className="aadhaar-detail-row">
+                      <span className="aadhaar-detail-label">Name</span>
+                      <span className="aadhaar-detail-value">{aadhaarData.name}</span>
+                    </div>
+                    <div className="aadhaar-detail-row">
+                      <span className="aadhaar-detail-label">Date of Birth</span>
+                      <span className="aadhaar-detail-value">{aadhaarData.dob}</span>
+                    </div>
+                    <div className="aadhaar-detail-row">
+                      <span className="aadhaar-detail-label">Gender</span>
+                      <span className="aadhaar-detail-value">{aadhaarData.gender}</span>
+                    </div>
+                    <div className="aadhaar-detail-row">
+                      <span className="aadhaar-detail-label">Address</span>
+                      <span className="aadhaar-detail-value">{aadhaarData.address}</span>
+                    </div>
+                    <div className="aadhaar-detail-row">
+                      <span className="aadhaar-detail-label">Aadhaar</span>
+                      <span className="aadhaar-detail-value">{aadhaarData.maskedAadhaar}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="kyc-info-box" style={{ background: '#f0fdf4', color: '#166534' }}>
+                  <svg width="16" height="16" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span>KYC verification complete. Your identity has been verified via UIDAI.</span>
+                </div>
+                <button className="checkout-btn" onClick={goNext}>Continue to Loan Offer</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -452,11 +723,11 @@ function PaymentPage({ data, theme, onBack }) {
               <div className="success-row"><span>Loan Amount</span><span>{formatCurrency(loanAmount)}</span></div>
               <div className="success-row"><span>EMI</span><span>{formatCurrency(emiAmount)}/mo x {selectedTenure} months</span></div>
               <div className="success-row"><span>Down Payment</span><span>{formatCurrency(downpaymentAmount)} (Paid)</span></div>
-              <div className="success-row success-total"><span>Order ID</span><span>#ORD{Date.now().toString().slice(-8)}</span></div>
+              <div className="success-row success-total"><span>Order ID</span><span>#{orderIdRef.current}</span></div>
             </div>
             <div className="success-actions">
-              <button className="checkout-btn" onClick={onBack}>Back to Shopping</button>
-              <button className="checkout-btn-secondary" onClick={() => {}}>Download Receipt</button>
+              <button className="checkout-btn" onClick={handleBack}>Back to Shopping</button>
+              <button className="checkout-btn-secondary" onClick={downloadReceipt}>Download Receipt</button>
             </div>
           </div>
         )}
