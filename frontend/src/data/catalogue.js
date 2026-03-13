@@ -44,6 +44,16 @@ const catalogue = [
     },
     camera: '200MP + 50MP + 12MP',
     highlights: ['AI-powered camera', 'Titanium frame', 'IP68 water resistant'],
+    // Semantic tags for AI recommendation engine
+    semantic: {
+      design: ['premium', 'minimalist', 'metal-frame', 'titanium'],
+      color_tone: ['neutral', 'muted', 'pastel'],
+      audience: ['professional', 'premium-buyer', 'camera-enthusiast'],
+      use_case: ['daily-driver', 'photography', 'productivity'],
+      vibe: ['refined', 'flagship', 'sophisticated'],
+      material: 'titanium',
+      price_tier: 'premium',  // budget, mid, upper-mid, premium, ultra-premium
+    },
   },
   {
     id: 'iphone-16-pro',
@@ -87,6 +97,15 @@ const catalogue = [
     },
     camera: '48MP + 48MP + 12MP',
     highlights: ['Camera Control button', 'A18 Pro chip', 'Titanium design'],
+    semantic: {
+      design: ['premium', 'minimalist', 'metal-frame', 'titanium'],
+      color_tone: ['neutral', 'earthy', 'muted'],
+      audience: ['professional', 'premium-buyer', 'apple-ecosystem'],
+      use_case: ['daily-driver', 'photography', 'productivity'],
+      vibe: ['refined', 'flagship', 'elegant'],
+      material: 'titanium',
+      price_tier: 'premium',
+    },
   },
   {
     id: 'google-pixel-10-pro',
@@ -129,11 +148,20 @@ const catalogue = [
     },
     camera: '50MP + 48MP + 48MP',
     highlights: ['7 years of updates', 'AI photo editing', 'Best-in-class HDR'],
+    semantic: {
+      design: ['clean', 'distinctive', 'camera-bar'],
+      color_tone: ['neutral', 'earthy', 'soft'],
+      audience: ['camera-enthusiast', 'ai-enthusiast', 'android-purist'],
+      use_case: ['photography', 'ai-features', 'daily-driver'],
+      vibe: ['intelligent', 'understated', 'practical'],
+      material: 'aluminum',
+      price_tier: 'upper-mid',
+    },
   },
   {
     id: 'oneplus-13',
     brand: 'OnePlus',
-    model: 'OnePlus 13',
+    model: '13',
     device_code: 'CPH2655',
     category: 'smartphone',
     release_year: 2025,
@@ -171,6 +199,15 @@ const catalogue = [
     },
     camera: '50MP + 50MP + 50MP',
     highlights: ['6000mAh battery', '100W fast charging', 'Hasselblad camera'],
+    semantic: {
+      design: ['bold', 'feature-packed', 'curved-display'],
+      color_tone: ['cool', 'dark', 'monochrome'],
+      audience: ['power-user', 'value-seeker', 'performance-enthusiast'],
+      use_case: ['gaming', 'fast-charging', 'photography'],
+      vibe: ['aggressive', 'flagship-killer', 'tech-forward'],
+      material: 'glass',
+      price_tier: 'upper-mid',
+    },
   },
   {
     id: 'samsung-galaxy-s26-fe',
@@ -213,6 +250,15 @@ const catalogue = [
     },
     camera: '50MP + 12MP + 8MP',
     highlights: ['Fan Edition value', 'Galaxy AI built-in', 'IP67 rated'],
+    semantic: {
+      design: ['familiar', 'samsung-dna', 'flat-display'],
+      color_tone: ['playful', 'pastel', 'vibrant'],
+      audience: ['value-seeker', 'samsung-loyalist', 'young-professional'],
+      use_case: ['daily-driver', 'social-media', 'ai-features'],
+      vibe: ['accessible', 'cheerful', 'practical'],
+      material: 'aluminum',
+      price_tier: 'mid',
+    },
   },
   {
     id: 'nothing-phone-3',
@@ -254,6 +300,15 @@ const catalogue = [
     },
     camera: '50MP + 50MP',
     highlights: ['Glyph Interface LED', 'Transparent design', 'Clean software'],
+    semantic: {
+      design: ['unique', 'transparent', 'statement-piece'],
+      color_tone: ['monochrome', 'minimal'],
+      audience: ['trend-setter', 'design-lover', 'minimalist'],
+      use_case: ['daily-driver', 'style-statement', 'clean-software'],
+      vibe: ['disruptive', 'artistic', 'counter-culture'],
+      material: 'glass-transparent',
+      price_tier: 'budget',
+    },
   },
 ];
 
@@ -363,6 +418,150 @@ export const compareSpecs = (a, b) => {
     { label: '5G', a: a.network['5g_supported'] ? 'Yes' : 'No', b: b.network['5g_supported'] ? 'Yes' : 'No', winner: 'tie', key: '5g' },
   ];
   return specs;
+};
+
+// ===== Semantic / AI Recommendation Engine =====
+
+// Jaccard similarity between two arrays of tags
+const tagOverlap = (a, b) => {
+  if (!a.length || !b.length) return 0;
+  const setA = new Set(a);
+  const intersection = b.filter(t => setA.has(t)).length;
+  return intersection / new Set([...a, ...b]).size;
+};
+
+// Color similarity via hex distance (perceptual)
+const hexToRgb = (hex) => {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+};
+
+const colorDistance = (hex1, hex2) => {
+  const [r1, g1, b1] = hexToRgb(hex1);
+  const [r2, g2, b2] = hexToRgb(hex2);
+  return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+};
+
+// Average color similarity across palettes (0-1, 1=identical)
+const paletteSimilarity = (colorsA, colorsB) => {
+  const maxDist = 441.67; // sqrt(255^2 * 3)
+  let totalSim = 0;
+  let count = 0;
+  for (const cA of colorsA) {
+    let bestSim = 0;
+    for (const cB of colorsB) {
+      const sim = 1 - (colorDistance(cA.hex, cB.hex) / maxDist);
+      if (sim > bestSim) bestSim = sim;
+    }
+    totalSim += bestSim;
+    count++;
+  }
+  return count > 0 ? totalSim / count : 0;
+};
+
+// Price tier distance (0=same, 1=max distance)
+const PRICE_TIERS = ['budget', 'mid', 'upper-mid', 'premium', 'ultra-premium'];
+const priceTierSimilarity = (a, b) => {
+  const idxA = PRICE_TIERS.indexOf(a);
+  const idxB = PRICE_TIERS.indexOf(b);
+  if (idxA === -1 || idxB === -1) return 0;
+  return 1 - Math.abs(idxA - idxB) / (PRICE_TIERS.length - 1);
+};
+
+const SEMANTIC_WEIGHTS = {
+  design: 0.20,
+  color_tone: 0.10,
+  audience: 0.20,
+  use_case: 0.15,
+  vibe: 0.10,
+  color_palette: 0.10,
+  price_tier: 0.10,
+  material: 0.05,
+};
+
+const computeSemanticScore = (a, b) => {
+  const sA = a.semantic;
+  const sB = b.semantic;
+  if (!sA || !sB) return 0;
+
+  let score = 0;
+  score += SEMANTIC_WEIGHTS.design * tagOverlap(sA.design, sB.design);
+  score += SEMANTIC_WEIGHTS.color_tone * tagOverlap(sA.color_tone, sB.color_tone);
+  score += SEMANTIC_WEIGHTS.audience * tagOverlap(sA.audience, sB.audience);
+  score += SEMANTIC_WEIGHTS.use_case * tagOverlap(sA.use_case, sB.use_case);
+  score += SEMANTIC_WEIGHTS.vibe * tagOverlap(sA.vibe, sB.vibe);
+  score += SEMANTIC_WEIGHTS.color_palette * paletteSimilarity(a.colors, b.colors);
+  score += SEMANTIC_WEIGHTS.price_tier * priceTierSimilarity(sA.price_tier, sB.price_tier);
+  score += SEMANTIC_WEIGHTS.material * (sA.material === sB.material ? 1 : 0);
+
+  return Math.round(score * 100);
+};
+
+// Generate a human-readable reason from the tag overlap
+const generateReason = (product, candidate) => {
+  const sA = product.semantic;
+  const sB = candidate.semantic;
+  if (!sA || !sB) return 'Similar product';
+
+  const reasons = [];
+
+  // Design overlap
+  const designMatch = sA.design.filter(t => sB.design.includes(t));
+  if (designMatch.length > 0) reasons.push(`shared ${designMatch[0]} design`);
+
+  // Material
+  if (sA.material === sB.material) reasons.push(`same ${sA.material} build`);
+
+  // Audience overlap
+  const audMatch = sA.audience.filter(t => sB.audience.includes(t));
+  if (audMatch.length > 0) {
+    const label = audMatch[0].replace(/-/g, ' ');
+    reasons.push(`both target ${label}s`);
+  }
+
+  // Use case
+  const useMatch = sA.use_case.filter(t => sB.use_case.includes(t));
+  if (useMatch.length > 0 && reasons.length < 3) {
+    reasons.push(`great for ${useMatch[0].replace(/-/g, ' ')}`);
+  }
+
+  // Color tone
+  const colorMatch = sA.color_tone.filter(t => sB.color_tone.includes(t));
+  if (colorMatch.length > 0 && reasons.length < 3) {
+    reasons.push(`${colorMatch[0]} color palette`);
+  }
+
+  // Vibe
+  const vibeMatch = sA.vibe.filter(t => sB.vibe.includes(t));
+  if (vibeMatch.length > 0 && reasons.length < 2) {
+    reasons.push(`${vibeMatch[0]} feel`);
+  }
+
+  // Price tier
+  if (sA.price_tier === sB.price_tier && reasons.length < 3) {
+    reasons.push(`same ${sA.price_tier} segment`);
+  }
+
+  if (reasons.length === 0) return 'Alternative option with different approach';
+  // Capitalize first letter
+  const text = reasons.join(', ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+// Get AI-style recommendations ranked by semantic similarity
+export const getSemanticRecommendations = (id, limit = 5) => {
+  const product = getProductById(id);
+  if (!product) return [];
+
+  return catalogue
+    .filter(p => p.id !== id)
+    .map(p => ({
+      ...p,
+      semanticScore: computeSemanticScore(product, p),
+      reason: generateReason(product, p),
+    }))
+    .sort((a, b) => b.semanticScore - a.semanticScore)
+    .slice(0, limit);
 };
 
 // Get similar products ranked by spec similarity

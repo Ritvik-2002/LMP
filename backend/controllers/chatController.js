@@ -544,6 +544,81 @@ exports.getProducts = (req, res) => {
   }
 };
 
+// AI-powered recommendation reasons (lightweight — only generates "why" text)
+const reasonsCache = {};
+
+exports.getRecommendationReasons = async (req, res) => {
+  try {
+    const { product, recommendations } = req.body;
+    // product: "Samsung Galaxy S26"
+    // recommendations: ["iPhone 16 Pro", "Pixel 10 Pro", ...]
+
+    if (!product || !recommendations || !recommendations.length) {
+      return res.status(400).json({ error: 'product and recommendations are required' });
+    }
+
+    const cacheKey = `${product}:${recommendations.join(',')}`;
+    if (reasonsCache[cacheKey]) {
+      return res.json(reasonsCache[cacheKey]);
+    }
+
+    const names = recommendations.slice(0, 4);
+    const prompt = `Viewing: ${product}. For each phone, write max 8 words on why it's similar (design/style/audience).
+${names.map((n, i) => `${i + 1}. ${n}`).join('\n')}
+Reply ONLY as JSON: {"phone name":"8 word reason"}`;
+
+    const response = await axios.post(GRID_AI_API_URL, {
+      model: 'open-fast',
+      messages: [
+        { role: 'system', content: 'JSON only. No markdown. Max 8 words per value.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    }, {
+      headers: {
+        'Authorization': `Bearer ${GRID_AI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 20000
+    });
+
+    const choice = response.data?.choices?.[0];
+    const rawContent = choice?.message?.content || choice?.text || '';
+    console.log('Grid AI raw response:', JSON.stringify(response.data).slice(0, 500));
+
+    if (!rawContent) {
+      return res.json({ reasons: {}, error: 'empty_response' });
+    }
+
+    let text = rawContent.trim();
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+
+    let reasons;
+    try {
+      reasons = JSON.parse(text);
+    } catch (parseErr) {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try { reasons = JSON.parse(jsonMatch[0]); } catch (e) {
+          console.error('Parse failed:', text);
+          return res.json({ reasons: {}, error: 'parse_failed' });
+        }
+      } else {
+        console.error('No JSON found:', text);
+        return res.json({ reasons: {}, error: 'parse_failed' });
+      }
+    }
+
+    const result = { reasons };
+    reasonsCache[cacheKey] = result;
+    res.json(result);
+  } catch (error) {
+    console.error('Recommendation reasons error:', error.response?.data || error.message);
+    res.status(500).json({ reasons: {}, error: 'api_failed' });
+  }
+};
+
 // Get specific product details
 exports.getProduct = (req, res) => {
   try {

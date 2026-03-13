@@ -667,6 +667,178 @@
   }
 }
 
+/* AI Recommendations */
+.ai-recs-section {
+  margin-top: 48px;
+}
+
+.ai-recs-header {
+  margin-bottom: 20px;
+}
+
+.ai-recs-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.ai-recs-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--gradient);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.ai-recs-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+.ai-recs-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.ai-recs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ai-rec-card {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-rec-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.ai-rec-rank {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 28px;
+  height: 28px;
+  background: var(--gradient);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.ai-rec-image {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ai-rec-info {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.ai-rec-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-rec-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.ai-rec-score {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  background: var(--gradient);
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.ai-rec-reason {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  font-style: italic;
+}
+
+.ai-rec-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ai-rec-price {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ai-rec-discount {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  .ai-recs-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-recs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Similarity Badge */
 .similarity-badge {
   font-size: 0.65rem;

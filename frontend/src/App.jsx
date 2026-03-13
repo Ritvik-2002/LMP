@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getMerchantTheme } from './themes/merchantThemes';
 import PaymentPage from './components/PaymentPage';
 import Chatbot from './components/Chatbot';
-import catalogue, { getSimilarProducts, compareSpecs } from './data/catalogue';
+import catalogue, { getProductById, getSimilarProducts, getSemanticRecommendations, compareSpecs } from './data/catalogue';
 import './App.css';
 
 const sampleData = {
@@ -82,6 +83,8 @@ const PhoneImage = ({ color, brand, size = 'large' }) => {
 };
 
 function App() {
+  const { productId } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,16 +93,26 @@ function App() {
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedStorage, setSelectedStorage] = useState(null);
   const [compareWith, setCompareWith] = useState(null);
+  const [aiReasons, setAiReasons] = useState({});
+  const [reasonsLoading, setReasonsLoading] = useState(false);
 
   useEffect(() => {
+    // Reset selections when product changes
+    setSelectedColor(0);
+    setSelectedStorage(null);
+    setCompareWith(null);
+    setAiReasons({});
+    window.scrollTo(0, 0);
+
     const urlParams = new URLSearchParams(window.location.search);
     const encodedData = urlParams.get('data');
     if (encodedData) {
       try { setData(JSON.parse(atob(encodedData))); } catch { setData(sampleData); }
     } else {
-      setData(sampleData);
+      // Use product ID from URL route, or fall back to default
+      setData({ ...sampleData, product_id: productId || sampleData.product_id });
     }
-  }, []);
+  }, [productId]);
 
   useEffect(() => {
     if (data) {
@@ -109,6 +122,28 @@ function App() {
       setLoading(false);
     }
   }, [data]);
+
+  // Fetch AI reasons for recommendations (lightweight call)
+  useEffect(() => {
+    if (loading || !data) return;
+    const prod = catalogue.find(p => p.id === data.product_id) || catalogue[0];
+    const recs = getSemanticRecommendations(prod.id, 4);
+    if (!recs.length) return;
+
+    setReasonsLoading(true);
+    fetch('/api/chat/recommendation-reasons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product: `${prod.brand} ${prod.model}`,
+        recommendations: recs.map(r => `${r.brand} ${r.model}`)
+      })
+    })
+      .then(r => r.json())
+      .then(d => { if (d.reasons) setAiReasons(d.reasons); })
+      .catch(() => {})
+      .finally(() => setReasonsLoading(false));
+  }, [loading, data]);
 
   if (loading || !data || !theme) {
     return (
@@ -122,6 +157,7 @@ function App() {
   // Get product from catalogue
   const product = catalogue.find(p => p.id === data.product_id) || catalogue[0];
   const similar = getSimilarProducts(product.id, 4);
+  const aiRecs = getSemanticRecommendations(product.id, 4);
   const storage = selectedStorage || product.default_storage;
   const color = product.colors[selectedColor];
   const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
@@ -130,7 +166,7 @@ function App() {
   if (showPayment) {
     return (
       <>
-        <PaymentPage data={data} theme={theme} onBack={() => setShowPayment(false)} />
+        <PaymentPage data={{ ...data, product_name: `${product.brand} ${product.model}`, loan_request: { ...data.loan_request, amount: product.price } }} theme={theme} onBack={() => setShowPayment(false)} />
         <Chatbot isOpen={showChat} onClose={() => setShowChat(false)} />
       </>
     );
@@ -309,6 +345,58 @@ function App() {
           </div>
         </div>
 
+        {/* AI Recommendations */}
+        <div className="ai-recs-section">
+          <div className="ai-recs-header">
+            <div>
+              <h2 className="ai-recs-title">
+                <span className="ai-recs-icon">
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4c0 1.1-.9 2-2 2h-4a2 2 0 01-2-2 4 4 0 014-4z"/><path d="M8 8v8a4 4 0 008 0V8"/><path d="M6 12h12"/></svg>
+                </span>
+                AI Picks for You
+              </h2>
+              <p className="ai-recs-subtitle">Recommended based on design, aesthetics & audience — powered by AI</p>
+            </div>
+          </div>
+          <div className="ai-recs-grid">
+            {aiRecs.map((rec, idx) => {
+              const d = Math.round(((rec.mrp - rec.price) / rec.mrp) * 100);
+              return (
+                <div key={rec.id} className="ai-rec-card" onClick={() => navigate(`/product/${rec.id}`)}>
+                  <div className="ai-rec-rank">#{idx + 1}</div>
+                  <div className="ai-rec-image" style={{ background: rec.colors[0].image_bg }}>
+                    <PhoneImage color={rec.colors[0].hex} brand={rec.brand} size="small" />
+                  </div>
+                  <div className="ai-rec-info">
+                    <div className="ai-rec-name-row">
+                      <h4 className="ai-rec-name">{rec.brand} {rec.model}</h4>
+                      <span className="ai-rec-score">{rec.semanticScore}%</span>
+                    </div>
+                    <p className="ai-rec-reason">
+                      {(() => {
+                        const name = `${rec.brand} ${rec.model}`;
+                        const exact = aiReasons[name];
+                        if (exact) return exact;
+                        // Fuzzy match — find key that contains brand or model
+                        const fuzzy = Object.entries(aiReasons).find(([k]) =>
+                          k.toLowerCase().includes(rec.model.toLowerCase()) ||
+                          name.toLowerCase().includes(k.toLowerCase())
+                        );
+                        return fuzzy ? fuzzy[1] : rec.reason;
+                      })()}
+                      {reasonsLoading && !Object.keys(aiReasons).length && <span className="reason-loading"> ...</span>}
+                    </p>
+                    <div className="ai-rec-price-row">
+                      <span className="ai-rec-price">{formatCurrency(rec.price)}</span>
+                      {d > 0 && <span className="ai-rec-discount">{d}% off</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Compare with Similar Products */}
         <div className="similar-section">
           <h2 className="similar-title">Similar Phones</h2>
@@ -321,14 +409,23 @@ function App() {
                 <div
                   key={p.id}
                   className={`similar-card ${isComparing ? 'active' : ''}`}
-                  onClick={() => setCompareWith(isComparing ? null : p)}
                 >
-                  <div className="similar-image" style={{ background: p.colors[0].image_bg }}>
+                  <div
+                    className="similar-image"
+                    style={{ background: p.colors[0].image_bg, cursor: 'pointer' }}
+                    onClick={() => navigate(`/product/${p.id}`)}
+                  >
                     <PhoneImage color={p.colors[0].hex} brand={p.brand} size="small" />
                   </div>
                   <div className="similar-info">
                     <div className="similar-name-row">
-                      <h4 className="similar-name">{p.brand} {p.model}</h4>
+                      <h4
+                        className="similar-name"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/product/${p.id}`)}
+                      >
+                        {p.brand} {p.model}
+                      </h4>
                       <span className="similarity-badge">{p.similarity}% match</span>
                     </div>
                     <div className="similar-specs">
@@ -342,7 +439,9 @@ function App() {
                       <span className="stars-sm">{'★'.repeat(Math.floor(p.rating))}</span>
                       <span>{p.rating}</span>
                     </div>
-                    <div className="compare-cta">{isComparing ? 'Hide comparison' : 'Compare specs'}</div>
+                    <button className="compare-cta" onClick={() => setCompareWith(isComparing ? null : p)}>
+                      {isComparing ? 'Hide comparison' : 'Compare specs'}
+                    </button>
                   </div>
                 </div>
               );
