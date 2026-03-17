@@ -2,7 +2,7 @@
 // All data is deterministic (no Math.random) for consistent rendering.
 // Revenue and prices are in Indian Rupees (INR).
 
-import catalogue from '../../data/catalogue.js';
+import catalogue from './catalogue.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

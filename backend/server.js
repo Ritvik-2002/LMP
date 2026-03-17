@@ -14,10 +14,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Import routes
 const chatRoutes = require('./routes/chatRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 // Use routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/products', productRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

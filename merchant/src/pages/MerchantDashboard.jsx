@@ -22,7 +22,8 @@ import {
   MoreVertical,
   LogOut,
   Store,
-  Calendar
+  Calendar,
+  Upload
 } from 'lucide-react';
 import {
   LineChart,
@@ -47,6 +48,7 @@ import {
   Legend
 } from 'recharts';
 import './MerchantDashboard.css';
+import ProductUpload from '../components/ProductUpload.jsx';
 import {
   getOverviewKPIs,
   getTransactionData,
@@ -60,12 +62,14 @@ import {
   getRevenueForecast,
   getDemographicsData
 } from '../data/merchantMockData';
+import { loadUploadedProducts, getCombinedInventory } from '../utils/productStorage';
 import { storeZones, storeWidth, storeHeight } from '../data/storeLayout';
 
 // Navigation items configuration
 const navItems = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'inventory', label: 'Inventory', icon: Package },
+  { id: 'upload', label: 'Product Upload', icon: Upload },
   { id: 'heatmap', label: 'Store Heatmap', icon: Map },
   { id: 'sponsored', label: 'Sponsored Products', icon: Megaphone },
   { id: 'discounts', label: 'Discounts & Promos', icon: Tag },
@@ -465,7 +469,33 @@ const OverviewSection = () => {
 
 // Inventory Section
 const InventorySection = () => {
-  const inventory = getInventoryData();
+  const [inventory, setInventory] = useState(getInventoryData());
+  const [uploadedProducts, setUploadedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState('all');
+
+  useEffect(() => {
+    const loaded = loadUploadedProducts();
+    setUploadedProducts(loaded);
+  }, []);
+
+  const formatUploadedPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const allProducts = [
+    ...inventory.products.map(p => ({ ...p, source: 'catalogue' })),
+    ...uploadedProducts.map(p => ({ ...p, source: 'uploaded' }))
+  ];
+
+  const filteredProducts = activeTab === 'all' 
+    ? allProducts 
+    : activeTab === 'uploaded' 
+      ? uploadedProducts.map(p => ({ ...p, source: 'uploaded' }))
+      : inventory.products.map(p => ({ ...p, source: 'catalogue' }));
 
   return (
     <>
@@ -475,48 +505,78 @@ const InventorySection = () => {
             <Package size={20} color="#12DAA8" />
             Inventory Management
           </h3>
-          <button className="section-action">
-            <Mic size={16} style={{ marginRight: '8px' }} />
-            Voice Update
-          </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div className="inventory-tabs">
+              {['all', 'catalogue', 'uploaded'].map(tab => (
+                <button
+                  key={tab}
+                  className={`inventory-tab ${activeTab === tab ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'uploaded' && uploadedProducts.length > 0 && (
+                    <span className="tab-badge">{uploadedProducts.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button className="section-action">
+              <Mic size={16} style={{ marginRight: '8px' }} />
+              Voice Update
+            </button>
+          </div>
         </div>
         <div className="inventory-table-wrapper">
           <table className="inventory-table">
             <thead>
               <tr>
                 <th>Product</th>
+                <th>Source</th>
                 <th>Status</th>
                 <th>Stock</th>
-                <th>Sold</th>
-                <th>Turnover Rate</th>
-                <th>Last Restocked</th>
+                <th>Price</th>
+                <th>Category</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {inventory.products.map(product => (
-                <tr key={product.id}>
+              {filteredProducts.map(product => (
+                <tr key={`${product.source}-${product.id}`}>
                   <td>
                     <div className="inventory-product">
-                      <div className="inventory-product-image" style={{ background: product.colors?.[0]?.image_bg || '#334155' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#fff' }}>{product.brand?.[0]}</span>
-                      </div>
+                      {product.source === 'catalogue' ? (
+                        <div className="inventory-product-image" style={{ background: product.colors?.[0]?.image_bg || '#334155' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#fff' }}>{product.brand?.[0]}</span>
+                        </div>
+                      ) : (
+                        <div className="inventory-product-image uploaded-image">
+                          {product.images?.[0] ? (
+                            <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <Package size={20} color="#64748b" />
+                          )}
+                        </div>
+                      )}
                       <div className="inventory-product-info">
-                        <h4>{product.brand} {product.model}</h4>
-                        <span>{product.device_code}</span>
+                        <h4>{product.source === 'catalogue' ? `${product.brand} ${product.model}` : product.name}</h4>
+                        <span>{product.source === 'catalogue' ? product.device_code : 'Uploaded Product'}</span>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span className={`stock-badge ${product.status}`}>
-                      <span className="stock-dot" />
-                      {product.status.replace('-', ' ')}
+                    <span className={`source-badge ${product.source}`}>
+                      {product.source === 'catalogue' ? 'Catalogue' : 'Uploaded'}
                     </span>
                   </td>
-                  <td>{product.stock}</td>
-                  <td>{product.sold}</td>
-                  <td>{product.turnoverRate}x</td>
-                  <td>{new Date(product.lastRestocked).toLocaleDateString()}</td>
+                  <td>
+                    <span className={`stock-badge ${product.status || 'active'}`}>
+                      <span className="stock-dot" />
+                      {(product.status || 'active').replace('-', ' ')}
+                    </span>
+                  </td>
+                  <td>{product.stock !== undefined ? product.stock : 'N/A'}</td>
+                  <td>{formatUploadedPrice(product.price)}</td>
+                  <td>{product.category || 'Uncategorized'}</td>
                   <td>
                     <button className="merchant-header-btn" style={{ width: '32px', height: '32px' }}>
                       <MoreVertical size={16} />
@@ -526,6 +586,12 @@ const InventorySection = () => {
               ))}
             </tbody>
           </table>
+          {filteredProducts.length === 0 && (
+            <div className="inventory-empty">
+              <Package size={48} color="#64748b" />
+              <p>No products found in this category</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -738,9 +804,388 @@ const SponsoredSection = () => {
   );
 };
 
+const DiscountAIChat = ({ onSuggestion }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { type: 'ai', text: 'Hi! I can help you with discount strategies. Ask me anything about pricing, promotions, or bulk discounts!' }
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useState(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const quickPrompts = [
+    'Suggest discount for slow moving stock',
+    'Best discount for iPhone 16 Pro',
+    'Weekend flash sale strategy',
+    'Clearance sale recommendations',
+    'Competitive pricing analysis',
+  ];
+
+  const generateAIResponse = (userMessage) => {
+    const lowerMsg = userMessage.toLowerCase();
+    
+    if (lowerMsg.includes('iphone') && lowerMsg.includes('pro')) {
+      return {
+        text: 'Based on current market analysis, I recommend a 5-8% discount on iPhone 16 Pro. This maintains margin while staying competitive. Competitors are offering 3-5%, so this positions you attractively.',
+        suggestion: { product: 'iPhone 16 Pro', discount: 7, reason: 'Competitive positioning' }
+      };
+    } else if (lowerMsg.includes('slow') || lowerMsg.includes('moving') || lowerMsg.includes('stock')) {
+      return {
+        text: 'For slow-moving inventory, I suggest a tiered approach: 10% for items 30+ days old, 15% for 60+ days, and 20%+ for 90+ days. This creates urgency while maximizing recovery.',
+        suggestion: { type: 'tiered', discount: 15, reason: 'Inventory aging strategy' }
+      };
+    } else if (lowerMsg.includes('weekend') || lowerMsg.includes('flash')) {
+      return {
+        text: 'Weekend flash sales work best with 12-15% discounts on popular items. Time it for Friday 6 PM - Sunday 10 PM. Promote via push notifications 2 hours before launch.',
+        suggestion: { type: 'flash', discount: 15, reason: 'Weekend traffic optimization' }
+      };
+    } else if (lowerMsg.includes('clearance')) {
+      return {
+        text: 'For clearance, start with 20% and increase by 5% weekly. Bundle slow movers with fast sellers at 25% off combined. This clears inventory faster than flat discounts.',
+        suggestion: { type: 'clearance', discount: 25, reason: 'Inventory liquidation' }
+      };
+    } else if (lowerMsg.includes('competitive') || lowerMsg.includes('pricing')) {
+      return {
+        text: 'Your Galaxy S26 pricing is 3% above market average. Consider a 5% discount to match competitors. iPhone 16 Pro is competitively priced - maintain current pricing.',
+        suggestion: { product: 'Samsung Galaxy S26', discount: 5, reason: 'Price matching' }
+      };
+    } else {
+      return {
+        text: 'I can help you optimize discounts based on inventory age, competitor pricing, and sales velocity. Try asking about specific products or strategies like "weekend flash sales" or "clearance recommendations".',
+        suggestion: null
+      };
+    }
+  };
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    const userMsg = inputText.trim();
+    setMessages(prev => [...prev, { type: 'user', text: userMsg }]);
+    setInputText('');
+    setIsTyping(true);
+
+    setTimeout(() => {
+      const response = generateAIResponse(userMsg);
+      setMessages(prev => [...prev, { type: 'ai', text: response.text, suggestion: response.suggestion }]);
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  const handleQuickPrompt = (prompt) => {
+    setMessages(prev => [...prev, { type: 'user', text: prompt }]);
+    setIsTyping(true);
+
+    setTimeout(() => {
+      const response = generateAIResponse(prompt);
+      setMessages(prev => [...prev, { type: 'ai', text: response.text, suggestion: response.suggestion }]);
+      setIsTyping(false);
+    }, 800);
+  };
+
+  const handleApplySuggestion = (suggestion) => {
+    onSuggestion(suggestion);
+    setMessages(prev => [...prev, { type: 'system', text: 'Discount applied successfully!' }]);
+  };
+
+  return (
+    <div className="discount-ai-chat">
+      {!isOpen ? (
+        <button className="chat-toggle-btn" onClick={() => setIsOpen(true)}>
+          <Sparkles size={20} />
+          Ask AI for Discount Help
+        </button>
+      ) : (
+        <div className="chat-container">
+          <div className="chat-header">
+            <h4>
+              <Sparkles size={18} color="#f59e0b" />
+              AI Discount Assistant
+            </h4>
+            <button className="chat-close-btn" onClick={() => setIsOpen(false)}>
+              <XCircle size={20} />
+            </button>
+          </div>
+          
+          <div className="chat-messages">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`chat-message ${msg.type}`}>
+                {msg.type === 'ai' && <div className="chat-avatar ai">AI</div>}
+                <div className="chat-bubble">
+                  <p>{msg.text}</p>
+                  {msg.suggestion && (
+                    <button 
+                      className="apply-suggestion-btn"
+                      onClick={() => handleApplySuggestion(msg.suggestion)}
+                    >
+                      <CheckCircle size={14} />
+                      Apply {msg.suggestion.discount}% Discount
+                    </button>
+                  )}
+                </div>
+                {msg.type === 'user' && <div className="chat-avatar user">You</div>}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="chat-message ai typing">
+                <div className="chat-avatar ai">AI</div>
+                <div className="chat-bubble typing">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="chat-quick-prompts">
+            {quickPrompts.map((prompt, idx) => (
+              <button key={idx} className="quick-prompt-btn" onClick={() => handleQuickPrompt(prompt)}>
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          <div className="chat-input-area">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask about discounts, pricing strategies..."
+              className="chat-input"
+            />
+            <button className="chat-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Discounts Section
+const CreateDiscountModal = ({ isOpen, onClose, onCreate }) => {
+  const [productName, setProductName] = useState('');
+  const [discountType, setDiscountType] = useState('percentage');
+  const [discountValue, setDiscountValue] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const today = new Date().toISOString().split('T')[0];
+      const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      setStartDate(today);
+      setEndDate(nextMonth);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!productName || !discountValue) return;
+
+    onCreate({
+      id: `manual-${Date.now()}`,
+      productName,
+      type: discountType,
+      value: parseFloat(discountValue),
+      startDate,
+      endDate,
+      reason: reason || 'Manual discount created by merchant',
+      usageCount: 0,
+      isManual: true
+    });
+
+    setProductName('');
+    setDiscountValue('');
+    setReason('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content discount-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Create New Discount</h3>
+          <button className="modal-close-btn" onClick={onClose}>
+            <XCircle size={24} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="discount-form">
+          <div className="form-group">
+            <label className="form-label">
+              Product Name <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="Enter product name"
+              required
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Discount Type</label>
+              <select
+                className="form-select"
+                value={discountType}
+                onChange={(e) => setDiscountType(e.target.value)}
+              >
+                <option value="percentage">Percentage (%)</option>
+                <option value="flat">Flat Amount (₹)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">
+                Discount Value <span className="required">*</span>
+              </label>
+              <input
+                type="number"
+                className="form-input"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+                placeholder={discountType === 'percentage' ? 'e.g., 15' : 'e.g., 5000'}
+                min="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Start Date</label>
+              <input
+                type="date"
+                className="form-input"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">End Date</label>
+              <input
+                type="date"
+                className="form-input"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Reason / Notes</label>
+            <textarea
+              className="form-textarea"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Why are you creating this discount?"
+              rows={3}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="section-action secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="section-action">
+              <CheckCircle size={16} style={{ marginRight: '8px' }} />
+              Create Discount
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const DiscountsSection = () => {
-  const { active, agingSuggestions } = getDiscounts();
+  const { active: initialActive, agingSuggestions } = getDiscounts();
+  const [active, setActive] = useState(initialActive);
+  const [suggestions, setSuggestions] = useState(agingSuggestions);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleAISuggestion = (suggestion) => {
+    if (suggestion.product) {
+      const newSuggestion = {
+        productId: `ai-${Date.now()}`,
+        productName: suggestion.product,
+        suggestedDiscount: suggestion.discount,
+        reason: suggestion.reason,
+        currentStock: 10,
+        daysSinceRestock: 0,
+        isAIChat: true
+      };
+      setSuggestions(prev => [newSuggestion, ...prev]);
+    }
+  };
+
+  const handleCreateDiscount = (discount) => {
+    setActive(prev => [discount, ...prev]);
+  };
+
+  const handleDeleteDiscount = (id) => {
+    setActive(prev => prev.filter(d => d.id !== id));
+  };
+
+  const handleApplySuggestion = (suggestion) => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const newDiscount = {
+      id: `ai-applied-${Date.now()}`,
+      productId: suggestion.productId || `ai-${Date.now()}`,
+      productName: suggestion.productName,
+      type: 'percentage',
+      value: suggestion.suggestedDiscount,
+      startDate: today,
+      endDate: nextMonth,
+      usageCount: 0,
+      reason: suggestion.reason,
+      isAIApplied: true
+    };
+    
+    setActive(prev => [newDiscount, ...prev]);
+    setSuggestions(prev => prev.filter((_, i) => i !== suggestions.indexOf(suggestion)));
+  };
+
+  const handleApplyAllSuggestions = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const newDiscounts = suggestions.map(suggestion => ({
+      id: `ai-applied-${Date.now()}-${Math.random()}`,
+      productId: suggestion.productId || `ai-${Date.now()}-${Math.random()}`,
+      productName: suggestion.productName,
+      type: 'percentage',
+      value: suggestion.suggestedDiscount,
+      startDate: today,
+      endDate: nextMonth,
+      usageCount: 0,
+      reason: suggestion.reason,
+      isAIApplied: true
+    }));
+    
+    setActive(prev => [...newDiscounts, ...prev]);
+    setSuggestions([]);
+  };
 
   return (
     <>
@@ -748,55 +1193,101 @@ const DiscountsSection = () => {
         <div className="section-header">
           <h3 className="section-title">
             <Tag size={20} color="#12DAA8" />
-            Active Discounts
+            Active Discounts ({active.length})
           </h3>
-          <button className="section-action">Create Discount</button>
+          <div className="header-actions">
+            <button className="section-action secondary" onClick={() => setIsModalOpen(true)}>
+              <Tag size={16} style={{ marginRight: '8px' }} />
+              Create Discount
+            </button>
+          </div>
         </div>
         <div className="discounts-list">
-          {active.map(discount => (
-            <div key={discount.id} className="discount-item">
-              <div className={`discount-badge ${discount.type}`}>
-                <span className="discount-badge-value">
-                  {discount.type === 'percentage' ? `${discount.value}%` : `₹${discount.value}`}
-                </span>
-                <span className="discount-badge-type">{discount.type}</span>
-              </div>
-              <div className="discount-content">
-                <h4>{discount.productName}</h4>
-                <p>Valid from {new Date(discount.startDate).toLocaleDateString()} to {new Date(discount.endDate).toLocaleDateString()}</p>
-              </div>
-              <div className="discount-stats">
-                <div className="discount-stat">
-                  <div className="discount-stat-value">{discount.usageCount}</div>
-                  <div className="discount-stat-label">Used</div>
+          {active.length === 0 ? (
+            <div className="discounts-empty">
+              <Tag size={48} color="#64748b" />
+              <p>No active discounts</p>
+              <span>Create your first discount to get started</span>
+            </div>
+          ) : (
+            active.map(discount => (
+              <div key={discount.id} className={`discount-item ${discount.isManual ? 'manual-discount' : ''} ${discount.isAIApplied ? 'ai-applied' : ''}`}>
+                <div className={`discount-badge ${discount.type}`}>
+                  <span className="discount-badge-value">
+                    {discount.type === 'percentage' ? `${discount.value}%` : `₹${discount.value}`}
+                  </span>
+                  <span className="discount-badge-type">{discount.type}</span>
+                </div>
+                <div className="discount-content">
+                  <h4>
+                    {discount.productName}
+                    {discount.isManual && <span className="manual-badge">Manual</span>}
+                    {discount.isAIApplied && <span className="ai-applied-badge">AI Applied</span>}
+                  </h4>
+                  <p>Valid from {new Date(discount.startDate).toLocaleDateString()} to {new Date(discount.endDate).toLocaleDateString()}</p>
+                </div>
+                <div className="discount-stats">
+                  <div className="discount-stat">
+                    <div className="discount-stat-value">{discount.usageCount}</div>
+                    <div className="discount-stat-label">Used</div>
+                  </div>
+                  <button 
+                    className="delete-discount-btn"
+                    onClick={() => handleDeleteDiscount(discount.id)}
+                    title="Delete discount"
+                  >
+                    <XCircle size={18} />
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
+
+      <CreateDiscountModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onCreate={handleCreateDiscount}
+      />
 
       <div className="section-card full-width">
         <div className="section-header">
           <h3 className="section-title">
             <Sparkles size={20} color="#f59e0b" />
-            AI Discount Suggestions
+            AI Discount Suggestions ({suggestions.length})
           </h3>
-          <button className="section-action secondary">Apply All</button>
+          <button 
+            className="section-action secondary" 
+            onClick={handleApplyAllSuggestions}
+            disabled={suggestions.length === 0}
+          >
+            Apply All
+          </button>
         </div>
+        
+        <DiscountAIChat onSuggestion={handleAISuggestion} />
+        
         <div className="ai-recs-list">
-          {agingSuggestions.map((suggestion, idx) => (
-            <div key={idx} className="ai-rec-item">
-              <div className="ai-rec-confidence medium">
+          {suggestions.map((suggestion, idx) => (
+            <div key={idx} className={`ai-rec-item ${suggestion.isAIChat ? 'ai-chat-suggestion' : ''}`}>
+              <div className={`ai-rec-confidence ${suggestion.isAIChat ? 'high' : 'medium'}`}>
                 {suggestion.suggestedDiscount}%
               </div>
               <div className="ai-rec-content">
                 <h4 className="ai-rec-title">
                   Discount for {suggestion.productName}
-                  <span className="ai-rec-type">AI Suggested</span>
+                  <span className={`ai-rec-type ${suggestion.isAIChat ? 'ai-chat' : ''}`}>
+                    {suggestion.isAIChat ? 'AI Chat Suggested' : 'AI Suggested'}
+                  </span>
                 </h4>
                 <p className="ai-rec-description">{suggestion.reason}</p>
-                <div className="ai-rec-action">
+                <div 
+                  className="ai-rec-action clickable"
+                  onClick={() => handleApplySuggestion(suggestion)}
+                  role="button"
+                  tabIndex={0}
+                >
                   <CheckCircle size={14} />
                   Apply {suggestion.suggestedDiscount}% discount
                 </div>
@@ -920,6 +1411,8 @@ const MerchantDashboard = () => {
         return <OverviewSection />;
       case 'inventory':
         return <InventorySection />;
+      case 'upload':
+        return <ProductUpload />;
       case 'heatmap':
         return <HeatmapSection />;
       case 'sponsored':
