@@ -578,3 +578,224 @@ export const getSimilarProducts = (id, limit = 4) => {
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, limit);
 };
+
+// ===== Additional Product Categories =====
+
+export const laptopCatalogue = [
+  {
+    id: 'macbook-air-m4',
+    brand: 'Apple',
+    model: 'MacBook Air M4',
+    category: 'laptops',
+    price: 119900,
+    mrp: 119900,
+    colors: [
+      { name: 'Midnight', hex: '#1d1d2c' },
+      { name: 'Starlight', hex: '#f0e6d3' },
+      { name: 'Silver', hex: '#d1d1d6' },
+      { name: 'Space Gray', hex: '#7d7e80' },
+    ],
+    highlights: ['M4 chip', '18hr battery', 'Liquid Retina'],
+  },
+  {
+    id: 'dell-xps-16',
+    brand: 'Dell',
+    model: 'XPS 16 9640',
+    category: 'laptops',
+    price: 149990,
+    mrp: 169990,
+    colors: [
+      { name: 'Platinum', hex: '#c0c0c0' },
+      { name: 'Graphite', hex: '#4a4a4a' },
+    ],
+    highlights: ['Intel Ultra 9', 'OLED 4K touch', '32GB RAM'],
+  },
+  {
+    id: 'hp-spectre-x360',
+    brand: 'HP',
+    model: 'Spectre x360 16',
+    category: 'laptops',
+    price: 134990,
+    mrp: 149990,
+    colors: [
+      { name: 'Nightfall Black', hex: '#1a1a2e' },
+      { name: 'Nocturne Blue', hex: '#1b3a5c' },
+    ],
+    highlights: ['2-in-1 convertible', '3K OLED', 'Intel Core Ultra 7'],
+  },
+  {
+    id: 'lenovo-thinkpad-x1',
+    brand: 'Lenovo',
+    model: 'ThinkPad X1 Carbon Gen 12',
+    category: 'laptops',
+    price: 164990,
+    mrp: 179990,
+    colors: [
+      { name: 'Black', hex: '#1a1a1a' },
+    ],
+    highlights: ['1.08kg ultralight', 'MIL-STD tested', '14" 2.8K OLED'],
+  },
+  {
+    id: 'asus-zenbook-14',
+    brand: 'ASUS',
+    model: 'ZenBook 14 OLED',
+    category: 'laptops',
+    price: 79990,
+    mrp: 94990,
+    colors: [
+      { name: 'Ponder Blue', hex: '#2b4570' },
+      { name: 'Jasper Gray', hex: '#7a7a7a' },
+    ],
+    highlights: ['AMD Ryzen 7', '14" 2.8K OLED', '1.2kg light'],
+  },
+];
+
+export const audioCatalogue = [
+  {
+    id: 'airpods-pro-3',
+    brand: 'Apple',
+    model: 'AirPods Pro 3',
+    category: 'audio',
+    price: 24900,
+    mrp: 24900,
+    colors: [
+      { name: 'White', hex: '#f5f5f5' },
+    ],
+    highlights: ['Adaptive ANC', 'Spatial Audio', 'USB-C MagSafe'],
+  },
+  {
+    id: 'sony-wh1000xm6',
+    brand: 'Sony',
+    model: 'WH-1000XM6',
+    category: 'audio',
+    price: 29990,
+    mrp: 34990,
+    colors: [
+      { name: 'Black', hex: '#1a1a1a' },
+      { name: 'Platinum Silver', hex: '#c8c8c8' },
+      { name: 'Midnight Blue', hex: '#1a2744' },
+    ],
+    highlights: ['Best-in-class ANC', '40hr battery', 'LDAC Hi-Res'],
+  },
+  {
+    id: 'samsung-buds4-pro',
+    brand: 'Samsung',
+    model: 'Galaxy Buds4 Pro',
+    category: 'audio',
+    price: 18999,
+    mrp: 22999,
+    colors: [
+      { name: 'Graphite', hex: '#4a4a4a' },
+      { name: 'White', hex: '#f0f0f0' },
+      { name: 'Violet', hex: '#8b6fc0' },
+    ],
+    highlights: ['360 Audio', 'AI noise control', 'IPX7 waterproof'],
+  },
+  {
+    id: 'jbl-tour-one-m3',
+    brand: 'JBL',
+    model: 'Tour One M3',
+    category: 'audio',
+    price: 24999,
+    mrp: 29999,
+    colors: [
+      { name: 'Black', hex: '#1a1a1a' },
+      { name: 'Champagne', hex: '#d4c5a9' },
+    ],
+    highlights: ['True Adaptive ANC', '50hr battery', 'Spatial sound'],
+  },
+  {
+    id: 'bose-qc-ultra',
+    brand: 'Bose',
+    model: 'QuietComfort Ultra',
+    category: 'audio',
+    price: 32990,
+    mrp: 37990,
+    colors: [
+      { name: 'Black', hex: '#1a1a1a' },
+      { name: 'White Smoke', hex: '#e8e8e8' },
+      { name: 'Sandstone', hex: '#c4a882' },
+    ],
+    highlights: ['Immersive Audio', 'CustomTune ANC', 'Premium comfort'],
+  },
+];
+
+export const wearableCatalogue = [
+  {
+    id: 'apple-watch-ultra-3',
+    brand: 'Apple',
+    model: 'Watch Ultra 3',
+    category: 'wearables',
+    price: 89900,
+    mrp: 89900,
+    colors: [
+      { name: 'Natural Titanium', hex: '#8a8578' },
+      { name: 'Black Titanium', hex: '#3c3c3c' },
+    ],
+    highlights: ['Titanium case', 'Dual GPS L1/L5', '72hr battery'],
+  },
+  {
+    id: 'samsung-galaxy-watch7',
+    brand: 'Samsung',
+    model: 'Galaxy Watch7',
+    category: 'wearables',
+    price: 29999,
+    mrp: 34999,
+    colors: [
+      { name: 'Green', hex: '#5c7a5e' },
+      { name: 'Cream', hex: '#f0e6d3' },
+      { name: 'Silver', hex: '#c0c0c0' },
+    ],
+    highlights: ['BioActive sensor', 'Wear OS 5', 'Sapphire crystal'],
+  },
+  {
+    id: 'garmin-venu-4',
+    brand: 'Garmin',
+    model: 'Venu 4',
+    category: 'wearables',
+    price: 44990,
+    mrp: 49990,
+    colors: [
+      { name: 'Black/Slate', hex: '#2d2d2d' },
+      { name: 'White/Gold', hex: '#f5f0eb' },
+    ],
+    highlights: ['AMOLED display', '10-day battery', 'Advanced fitness'],
+  },
+  {
+    id: 'google-pixel-watch3',
+    brand: 'Google',
+    model: 'Pixel Watch 3',
+    category: 'wearables',
+    price: 32999,
+    mrp: 38999,
+    colors: [
+      { name: 'Obsidian', hex: '#2d2d2d' },
+      { name: 'Porcelain', hex: '#f5f0eb' },
+      { name: 'Hazel', hex: '#8a8578' },
+    ],
+    highlights: ['Fitbit integration', 'Wear OS 5', 'AI health insights'],
+  },
+  {
+    id: 'noise-colorfit-pro6',
+    brand: 'Noise',
+    model: 'ColorFit Pro 6',
+    category: 'wearables',
+    price: 4999,
+    mrp: 7999,
+    colors: [
+      { name: 'Jet Black', hex: '#1a1a1a' },
+      { name: 'Silver Grey', hex: '#a0a0a0' },
+      { name: 'Rose Gold', hex: '#d4a882' },
+    ],
+    highlights: ['1.96" AMOLED', 'Bluetooth calling', '7-day battery'],
+  },
+];
+
+const allCatalogueMap = {
+  smartphones: catalogue,
+  laptops: laptopCatalogue,
+  audio: audioCatalogue,
+  wearables: wearableCatalogue,
+};
+
+export const getProductsByCategory = (categoryId) => allCatalogueMap[categoryId] || [];

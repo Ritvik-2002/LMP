@@ -331,7 +331,7 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#f5f5f5;padding:2
               <label className="form-label">Mobile Number</label>
               <div className="form-input-prefix">
                 <span className="input-prefix">+91</span>
-                <input className="form-input" type="tel" placeholder="10 digit mobile number" maxLength={10} value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })} />
+                <input className="form-input" type="tel" placeholder="Ten digit mobile number" maxLength={10} value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })} />
               </div>
             </div>
             <div className="form-group">
