@@ -24,7 +24,9 @@
       "Bash(pip3 install:*)",
       "Bash(cd /Users/prakhar.prakash/Desktop/Clones/LMP && python3 generate_ppt.py 2>&1)",
       "Bash(open /Users/prakhar.prakash/Desktop/Clones/LMP/LMP_Product_Document.pptx)",
-      "WebFetch(domain:theorg.com)"
+      "WebFetch(domain:theorg.com)",
+      "Bash(curl -s http://localhost:5173/merchant)",
+      "Bash(curl -s \"http://localhost:5173/@fs/Users/moksh.kajaliya/Desktop/LMP/frontend/src/merchant/pages/MerchantDashboard.jsx?import\")"
     ]
   }
 }
