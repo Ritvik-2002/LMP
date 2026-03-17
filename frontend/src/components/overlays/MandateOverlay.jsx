@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import BottomSheet from './BottomSheet';
 
 const formatPrice = (price) =>
@@ -6,19 +7,21 @@ const formatPrice = (price) =>
 
 const DEBIT_DATES = [1, 5, 10, 15];
 
-const UPI_APPS = [
-  { name: 'GPay', color: '#4285F4' },
-  { name: 'PhonePe', color: '#5F259F' },
-  { name: 'Paytm', color: '#00BAF2' },
-  { name: 'BHIM', color: '#00A86B' },
-];
+// Generate UPI deep-link for mandate transaction
+const buildVerificationQR = ({ emi, lenderName }) => {
+  const pa = 'fibe@upi';
+  const pn = encodeURIComponent(lenderName || 'Lender');
+  const amount = (emi || 0).toFixed(2);
+  const tn = encodeURIComponent(`Mandate setup — ₹${amount} refundable`);
+  return `upi://pay?pa=${pa}&pn=${pn}&am=${amount}&tn=${tn}&cu=INR`;
+};
 
 const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
   const [step, setStep] = useState('setup'); // setup | waiting | done
-  const [upiId, setUpiId] = useState('');
   const [debitDate, setDebitDate] = useState(5);
   const [countdown, setCountdown] = useState(180);
-  const isUpiValid = upiId.includes('@') && upiId.length > 3;
+
+  const verifyQR = buildVerificationQR({ emi, lenderName });
 
   // Countdown during waiting
   useEffect(() => {
@@ -28,7 +31,7 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
     return () => clearTimeout(t);
   }, [step, countdown]);
 
-  // Simulate UPI app approval after 3s
+  // Simulate scan approval after 3s
   useEffect(() => {
     if (step !== 'waiting') return;
     const t = setTimeout(() => setStep('done'), 3000);
@@ -42,14 +45,14 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
     }
   }, [step]);
 
-  const handleSend = () => {
+  // Simulate a QR scan tap (demo)
+  const handleQRTap = () => {
     setCountdown(180);
-    setStep('waiting');
+    setTimeout(() => setStep('waiting'), 600);
   };
 
   const handleClose = () => {
     setStep('setup');
-    setUpiId('');
     setDebitDate(5);
     setCountdown(180);
     onClose?.();
@@ -79,18 +82,6 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
           </div>
 
           <div className="overlay-field">
-            <label>UPI ID for Auto-debit</label>
-            <input
-              type="text"
-              placeholder="yourname@upi"
-              value={upiId}
-              onChange={e => setUpiId(e.target.value)}
-              className="overlay-input"
-            />
-            <span className="mandate-field-hint">A mandate request will be sent to this UPI ID</span>
-          </div>
-
-          <div className="overlay-field">
             <label>Monthly Debit Date</label>
             <div className="mandate-date-grid">
               {DEBIT_DATES.map(d => (
@@ -105,6 +96,24 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
             </div>
           </div>
 
+          {/* Single QR code for ₹1 verification */}
+          <div className="mandate-qr-single">
+            <div
+              className="mandate-qr-card mandate-qr-card--single"
+              onClick={handleQRTap}
+              title="Tap to simulate scan"
+            >
+              <QRCodeSVG value={verifyQR} size={160} level="M" includeMargin bgColor="#ffffff" fgColor="#1a1a2e" />
+              <p className="mandate-qr-label">Mandate Setup</p>
+              <p className="mandate-qr-sublabel">{formatPrice(emi || 0)} — Refundable</p>
+            </div>
+          </div>
+
+          <p className="mandate-qr-hint">
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m4-3v7h-7"/></svg>
+            Scan with any UPI app to complete mandate setup
+          </p>
+
           <div className="mandate-summary-box">
             <div className="mandate-row"><span>Amount</span><span>{formatPrice(emi || 0)}/month</span></div>
             <div className="mandate-row"><span>Debit Date</span><span>{debitDate}th of every month</span></div>
@@ -113,10 +122,6 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
           </div>
 
           <p className="mandate-legal">By proceeding, you authorise {lenderName} to debit {formatPrice(emi || 0)} monthly from your UPI ID as per NPCI UPI AutoPay guidelines.</p>
-
-          <button className="overlay-btn" disabled={!isUpiValid} onClick={handleSend}>
-            Send Mandate Request
-          </button>
         </div>
       )}
 
@@ -127,20 +132,12 @@ const MandateOverlay = ({ isOpen, onClose, onMandateSet, emi, lenderName }) => {
               <div className="collect-pulse-ring" />
               <svg width="28" height="28" fill="none" stroke="#007aff" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             </div>
-            <p className="collect-status-title">Mandate Request Sent</p>
-            <p className="collect-upi-id">{upiId}</p>
+            <p className="collect-status-title">QR Scanned</p>
             <p className="collect-amount-label">{formatPrice(emi || 0)}/month · {debitDate}th of every month</p>
           </div>
 
           <div className="collect-instructions">
-            <p className="collect-instruction-title">Open your UPI app to approve</p>
-            <div className="collect-app-list">
-              {UPI_APPS.map(app => (
-                <span key={app.name} className="collect-app-tag" style={{ borderColor: app.color + '44' }}>
-                  <span className="upi-app-dot" style={{ background: app.color }} />{app.name}
-                </span>
-              ))}
-            </div>
+            <p className="collect-instruction-title">Complete the payment in your UPI app</p>
           </div>
 
           <div className="collect-timer">

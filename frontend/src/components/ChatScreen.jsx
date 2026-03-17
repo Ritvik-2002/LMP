@@ -13,8 +13,17 @@ import {
   speechSupported, synthSupported, initRecognition, updateCallbacks,
   listen, stopListening, speak, stopSpeaking, destroy,
 } from '../utils/voice';
-import { getProductsByCategory } from '../data/catalogue';
+import { getProductsByCategory, getSemanticRecommendations } from '../data/catalogue';
 import './ChatScreen.css';
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 const API_BASE = '/api/journey';
 
@@ -80,6 +89,15 @@ const ChatScreen = () => {
   const [journeyState, setJourneyState] = useState('browsing');
   const [progress, setProgress] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Product popup state
+  const [showProductPopup, setShowProductPopup] = useState(false);
+  const [popupProduct, setPopupProduct] = useState(null);
+
+  // Cart state
+  const [cart, setCart] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
+  const [cartSessionId, setCartSessionId] = useState(() => sessionStorage.getItem('cart_session_id'));
 
   // Voice state
   const [voiceMode, setVoiceMode] = useState(false);
@@ -385,8 +403,54 @@ const ChatScreen = () => {
     }
   };
 
+  // Cart functions
+  const updateCartState = useCallback((data) => {
+    setCart(data.cart);
+    setCartCount(data.cartCount);
+    if (data.sessionId) {
+      setCartSessionId(data.sessionId);
+      sessionStorage.setItem('cart_session_id', data.sessionId);
+    }
+  }, []);
+
+  const addToCart = useCallback(async (product, color, storage) => {
+    const res = await fetch('/api/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: cartSessionId,
+        product: {
+          id: product.id,
+          name: `${product.brand} ${product.model}`,
+          brand: product.brand,
+          price: product.price,
+          mrp: product.mrp,
+          color: color.name,
+          color_hex: color.hex,
+          image_bg: color.image_bg,
+          storage,
+        }
+      })
+    });
+    const data = await res.json();
+    updateCartState(data);
+    return data;
+  }, [cartSessionId, updateCartState]);
+
   const handleProductTap = (product) => {
-    // Stay local — show product detail + action chips
+    // Show product popup with details and location
+    setPopupProduct(product);
+    setShowProductPopup(true);
+  };
+
+  const handleExploreEMI = () => {
+    // Close popup and start EMI journey
+    setShowProductPopup(false);
+    const product = popupProduct;
+    setPopupProduct(null);
+
+    if (!product) return;
+
     setSelectedProduct(product);
 
     const price = new Intl.NumberFormat('en-IN', {
@@ -944,6 +1008,232 @@ const ChatScreen = () => {
         }}
         loanData={loanData}
       />
+
+      {/* Product Detail Popup with Location */}
+      {showProductPopup && popupProduct && (
+        <ProductDetailPopup
+          product={popupProduct}
+          onClose={() => setShowProductPopup(false)}
+          onExploreEMI={handleExploreEMI}
+          onProductTap={(p) => {
+            setPopupProduct(p);
+          }}
+          onAddToCart={addToCart}
+          cartCount={cartCount}
+        />
+      )}
+    </div>
+  );
+};
+
+// ===== Product Detail Popup Component =====
+const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAddToCart, cartCount }) => {
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [selectedStorage, setSelectedStorage] = useState(product.default_storage || product.storage_options?.[0]);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  const color = product.colors[selectedColor];
+  const discount = product.mrp ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+
+  // Get recommended products
+  const recommendations = getSemanticRecommendations(product.id, 3);
+
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    try {
+      await onAddToCart(product, color, selectedStorage);
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    } catch (err) {
+      console.error('Add to cart failed:', err);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  return (
+    <div className="chat-product-popup-overlay" onClick={onClose}>
+      <div className="chat-product-popup" onClick={(e) => e.stopPropagation()}>
+        <button className="cpp-close" onClick={onClose}>✕</button>
+
+        {/* Cart Badge */}
+        {cartCount > 0 && (
+          <div className="cpp-cart-badge">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+            <span>{cartCount}</span>
+          </div>
+        )}
+
+        <div className="cpp-header">
+          <h2>{product.brand} {product.model}</h2>
+          <span className="cpp-device-code">{product.device_code}</span>
+        </div>
+
+        <div className="cpp-price-row">
+          <span className="cpp-price">{formatCurrency(product.price)}</span>
+          {discount > 0 && (
+            <>
+              <span className="cpp-mrp">{formatCurrency(product.mrp)}</span>
+              <span className="cpp-discount">{discount}% off</span>
+            </>
+          )}
+        </div>
+
+        {/* Color Selection */}
+        <div className="cpp-section">
+          <h4>Colour — <span className="cpp-color-name">{color.name}</span></h4>
+          <div className="cpp-color-options">
+            {product.colors.map((c, i) => (
+              <button
+                key={i}
+                className={`cpp-color-swatch ${i === selectedColor ? 'selected' : ''}`}
+                style={{ background: c.hex }}
+                onClick={() => setSelectedColor(i)}
+                title={c.name}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Storage Selection */}
+        <div className="cpp-section">
+          <h4>Storage</h4>
+          <div className="cpp-storage-options">
+            {product.storage_options?.map(s => (
+              <button
+                key={s}
+                className={`cpp-storage-btn ${s === selectedStorage ? 'selected' : ''}`}
+                onClick={() => setSelectedStorage(s)}
+              >
+                {s >= 1024 ? `${s/1024} TB` : `${s} GB`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="cpp-section">
+          <h4>Key Specifications</h4>
+          <div className="cpp-specs-grid">
+            <div className="cpp-spec">
+              <span className="spec-label">Display</span>
+              <span className="spec-value">{product.display.size_inch}" {product.display.type}</span>
+            </div>
+            <div className="cpp-spec">
+              <span className="spec-label">Processor</span>
+              <span className="spec-value">{product.hardware.chipset}</span>
+            </div>
+            <div className="cpp-spec">
+              <span className="spec-label">RAM</span>
+              <span className="spec-value">{product.hardware.ram_gb} GB</span>
+            </div>
+            <div className="cpp-spec">
+              <span className="spec-label">Storage</span>
+              <span className="spec-value">{selectedStorage} GB</span>
+            </div>
+            <div className="cpp-spec">
+              <span className="spec-label">Battery</span>
+              <span className="spec-value">{product.hardware.battery_mah} mAh</span>
+            </div>
+            <div className="cpp-spec">
+              <span className="spec-label">Camera</span>
+              <span className="spec-value">{product.camera}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="cpp-section">
+          <h4>Store Location</h4>
+          <div className="cpp-location-card">
+            <div className="cpp-location-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div className="cpp-location-details">
+              <div className="cpp-location-floor">{product.location?.floor || 'Ground Floor'}</div>
+              <div className="cpp-location-section">{product.location?.section || 'Mobile Zone'}</div>
+              <div className="cpp-location-aisle">
+                Aisle {product.location?.aisle || 'A1'} • {product.location?.shelf || 'Shelf 1'}
+              </div>
+              <div className="cpp-location-label">{product.location?.shelfLabel || 'Smartphones'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recommendations */}
+        {recommendations.length > 0 && (
+          <div className="cpp-section cpp-recommendations">
+            <h4>You May Also Like</h4>
+            <div className="cpp-rec-grid">
+              {recommendations.map((rec) => {
+                const recDiscount = rec.mrp ? Math.round(((rec.mrp - rec.price) / rec.mrp) * 100) : 0;
+                return (
+                  <div
+                    key={rec.id}
+                    className="cpp-rec-card"
+                    onClick={() => onProductTap(rec)}
+                  >
+                    <div className="cpp-rec-image" style={{ background: rec.colors[0]?.image_bg || '#f0f0f0' }}>
+                      <span className="cpp-rec-brand">{rec.brand}</span>
+                    </div>
+                    <div className="cpp-rec-info">
+                      <span className="cpp-rec-name">{rec.brand} {rec.model}</span>
+                      <span className="cpp-rec-price">{formatCurrency(rec.price)}</span>
+                      {recDiscount > 0 && <span className="cpp-rec-discount">{recDiscount}% off</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="cpp-highlights">
+          {(product.highlights || []).slice(0, 3).map((h, i) => (
+            <span key={i} className="cpp-highlight-tag">{h}</span>
+          ))}
+        </div>
+
+        <div className="cpp-actions">
+          <button
+            className={`cpp-btn-cart ${addedToCart ? 'added' : ''}`}
+            onClick={handleAddToCart}
+            disabled={addingToCart}
+          >
+            {addingToCart ? (
+              <span className="cpp-btn-spinner"></span>
+            ) : addedToCart ? (
+              <>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Added to Cart
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 01-8 0"/>
+                </svg>
+                Add to Cart
+              </>
+            )}
+          </button>
+          <button className="cpp-btn-primary" onClick={onExploreEMI}>
+            Explore EMI Options
+          </button>
+          <button className="cpp-btn-secondary" onClick={onClose}>
+            Continue Browsing
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

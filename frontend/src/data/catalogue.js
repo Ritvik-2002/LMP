@@ -9,6 +9,13 @@ const catalogue = [
     device_code: 'SM-S926B',
     category: 'smartphone',
     release_year: 2026,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A3',
+      shelf: 'Shelf 2',
+      shelfLabel: 'Premium Android'
+    },
     price: 129999,
     mrp: 149999,
     colors: [
@@ -62,6 +69,13 @@ const catalogue = [
     device_code: 'A3101',
     category: 'smartphone',
     release_year: 2025,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A1',
+      shelf: 'Shelf 1',
+      shelfLabel: 'Apple'
+    },
     price: 134900,
     mrp: 139900,
     colors: [
@@ -114,6 +128,13 @@ const catalogue = [
     device_code: 'GP-10P',
     category: 'smartphone',
     release_year: 2026,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A3',
+      shelf: 'Shelf 3',
+      shelfLabel: 'Premium Android'
+    },
     price: 99999,
     mrp: 109999,
     colors: [
@@ -165,6 +186,13 @@ const catalogue = [
     device_code: 'CPH2655',
     category: 'smartphone',
     release_year: 2025,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A2',
+      shelf: 'Shelf 2',
+      shelfLabel: 'Flagship'
+    },
     price: 69999,
     mrp: 74999,
     colors: [
@@ -216,6 +244,13 @@ const catalogue = [
     device_code: 'SM-S726B',
     category: 'smartphone',
     release_year: 2026,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A2',
+      shelf: 'Shelf 1',
+      shelfLabel: 'Mid-Range'
+    },
     price: 54999,
     mrp: 64999,
     colors: [
@@ -267,6 +302,13 @@ const catalogue = [
     device_code: 'A063',
     category: 'smartphone',
     release_year: 2025,
+    location: {
+      floor: 'Ground Floor',
+      section: 'Mobile Zone',
+      aisle: 'A4',
+      shelf: 'Shelf 1',
+      shelfLabel: 'Trending'
+    },
     price: 39999,
     mrp: 42999,
     colors: [

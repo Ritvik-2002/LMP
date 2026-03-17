@@ -1794,6 +1794,490 @@
   transition: opacity 0.15s;
 }
 
+/* ===== Product Detail Popup with Location ===== */
+.chat-product-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: cppFadeIn 0.2s ease;
+}
+
+@keyframes cppFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chat-product-popup {
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  animation: cppSlideUp 0.3s ease;
+}
+
+@keyframes cppSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cpp-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cpp-close:hover {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+
+/* Cart Badge */
+.cpp-cart-badge {
+  position: absolute;
+  top: 16px;
+  right: 56px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(18, 218, 168, 0.15);
+  border: 1px solid rgba(18, 218, 168, 0.2);
+  border-radius: 20px;
+  color: #12DAA8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Color Selection */
+.cpp-color-name {
+  color: white;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.cpp-color-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cpp-color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.cpp-color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.cpp-color-swatch.selected {
+  border-color: #12DAA8;
+  box-shadow: 0 0 0 3px rgba(18, 218, 168, 0.2), 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Storage Selection */
+.cpp-storage-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cpp-storage-btn {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cpp-storage-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.cpp-storage-btn.selected {
+  background: rgba(18, 218, 168, 0.15);
+  border-color: rgba(18, 218, 168, 0.4);
+  color: #12DAA8;
+}
+
+/* Recommendations */
+.cpp-recommendations {
+  padding-bottom: 8px;
+}
+
+.cpp-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cpp-rec-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cpp-rec-card:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(18, 218, 168, 0.2);
+  transform: translateY(-2px);
+}
+
+.cpp-rec-image {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cpp-rec-brand {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+}
+
+.cpp-rec-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cpp-rec-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cpp-rec-price {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #12DAA8;
+}
+
+.cpp-rec-discount {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(18, 218, 168, 0.8);
+  background: rgba(18, 218, 168, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+/* Add to Cart Button */
+.cpp-btn-cart {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cpp-btn-cart:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.cpp-btn-cart.added {
+  background: rgba(18, 218, 168, 0.2);
+  border-color: rgba(18, 218, 168, 0.4);
+  color: #12DAA8;
+}
+
+.cpp-btn-cart:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cpp-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: cppSpin 0.8s linear infinite;
+}
+
+@keyframes cppSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .cpp-rec-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cpp-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cpp-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+}
+
+.cpp-device-code {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  font-family: monospace;
+}
+
+.cpp-price-row {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cpp-price {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #12DAA8;
+}
+
+.cpp-mrp {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.4);
+  text-decoration: line-through;
+}
+
+.cpp-discount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #12DAA8;
+  background: rgba(18, 218, 168, 0.1);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.cpp-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cpp-section:last-of-type {
+  border-bottom: none;
+}
+
+.cpp-section h4 {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cpp-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.cpp-spec {
+  background: rgba(255,255,255,0.04);
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cpp-spec .spec-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cpp-spec .spec-value {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+
+.cpp-location-card {
+  display: flex;
+  gap: 16px;
+  background: rgba(18, 218, 168, 0.08);
+  border: 1px solid rgba(18, 218, 168, 0.15);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.cpp-location-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(18, 218, 168, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #12DAA8;
+  flex-shrink: 0;
+}
+
+.cpp-location-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cpp-location-floor {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.cpp-location-section {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.cpp-location-aisle {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+}
+
+.cpp-location-label {
+  font-size: 0.7rem;
+  color: #12DAA8;
+  font-weight: 600;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: rgba(18, 218, 168, 0.1);
+  border-radius: 6px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.cpp-highlights {
+  padding: 16px 24px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cpp-highlight-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(18, 218, 168, 0.9);
+  background: rgba(18, 218, 168, 0.08);
+  border: 1px solid rgba(18, 218, 168, 0.15);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.cpp-actions {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cpp-btn-primary {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #12DAA8, #0A9A78);
+  color: #0f0f1a;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cpp-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(18, 218, 168, 0.3);
+}
+
+.cpp-btn-secondary {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cpp-btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+@media (max-width: 640px) {
+  .chat-product-popup-overlay {
+    padding: 16px;
+  }
+  .chat-product-popup {
+    max-height: 90vh;
+  }
+  .cpp-specs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .rls-pay-btn:hover {
   opacity: 0.88;
 }
@@ -2272,6 +2756,64 @@
   color: rgba(255,255,255,0.3);
   line-height: 1.55;
   margin: 0;
+}
+
+/* ===== Mandate QR Codes ===== */
+.mandate-qr-single {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 12px;
+}
+
+.mandate-qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.mandate-qr-card--single {
+  width: fit-content;
+}
+
+.mandate-qr-card:hover {
+  border-color: rgba(52,199,89,0.5);
+}
+
+.mandate-qr-card svg {
+  border-radius: 8px;
+}
+
+.mandate-qr-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+  text-align: center;
+}
+
+.mandate-qr-sublabel {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+  text-align: center;
+}
+
+.mandate-qr-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  justify-content: center;
+  margin: 0 0 8px;
 }
 
 .mandate-back-btn {
