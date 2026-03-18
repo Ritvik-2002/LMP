@@ -102,8 +102,10 @@ exports.processAudio = async (req, res) => {
     console.log('STT result:', sttResult);
 
     const userText = sttResult.text.trim();
+    const MIN_STT_CONFIDENCE = 0.5;
 
-    if (!userText) {
+    if (!userText || sttResult.confidence < MIN_STT_CONFIDENCE) {
+      console.log('Rejecting STT result - empty or low confidence:', sttResult.confidence);
       voiceSession.state = 'idle';
       return res.json({
         voiceSessionId,

@@ -17,6 +17,7 @@ function useAudioRecorder() {
   const analyserRef = useRef(null);
   const chunksRef = useRef([]);
   const rafRef = useRef(null);
+  const peakLevelRef = useRef(0);
 
   const startRecording = useCallback(async () => {
     try {
@@ -26,6 +27,7 @@ function useAudioRecorder() {
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
         },
       });
 
@@ -41,6 +43,7 @@ function useAudioRecorder() {
       });
 
       chunksRef.current = [];
+      peakLevelRef.current = 0;
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
@@ -48,13 +51,15 @@ function useAudioRecorder() {
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
 
-      // Monitor audio levels
+      // Monitor audio levels and track peak energy
       const monitor = () => {
         if (!analyserRef.current) return;
         const data = new Uint8Array(analyserRef.current.frequencyBinCount);
         analyserRef.current.getByteFrequencyData(data);
         const avg = data.reduce((a, b) => a + b) / data.length;
-        setAudioLevel(avg / 255);
+        const level = avg / 255;
+        setAudioLevel(level);
+        if (level > peakLevelRef.current) peakLevelRef.current = level;
         rafRef.current = requestAnimationFrame(monitor);
       };
       monitor();
@@ -75,7 +80,7 @@ function useAudioRecorder() {
 
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        resolve(blob);
+        resolve({ blob, peakLevel: peakLevelRef.current });
       };
 
       mediaRecorderRef.current.stop();
@@ -381,8 +386,8 @@ export default function VoiceChatScreen() {
       silenceStartTimeRef.current = null;
       setCurrentState('processing');
 
-      const audioBlob = await stopRecording();
-      if (!audioBlob || audioBlob.size < 1000) {
+      const result = await stopRecording();
+      if (!result || !result.blob || result.blob.size < 1000) {
         setError('No audio detected. Please try again.');
         setCurrentState('idle');
         // Auto-retry
@@ -390,8 +395,18 @@ export default function VoiceChatScreen() {
         return;
       }
 
+      // Reject recordings where peak audio energy was too low (ambient noise only)
+      const MIN_PEAK_ENERGY = 0.18;
+      if (result.peakLevel < MIN_PEAK_ENERGY) {
+        console.log('Audio energy too low, likely noise:', result.peakLevel);
+        setError('No speech detected. Please speak louder.');
+        setCurrentState('idle');
+        setTimeout(() => toggleListeningRef.current?.('start'), 500);
+        return;
+      }
+
       const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
+      reader.readAsDataURL(result.blob);
       reader.onloadend = async () => {
         const base64 = reader.result.split(',')[1];
 
@@ -463,9 +478,9 @@ export default function VoiceChatScreen() {
   useEffect(() => {
     if (currentState !== 'listening' || !isRecording) return;
 
-    const SILENCE_THRESHOLD = 0.08;
-    const SILENCE_DURATION = 1800;
-    const MIN_SPEECH_TIME = 1000;
+    const SILENCE_THRESHOLD = 0.15;
+    const SILENCE_DURATION = 1500;
+    const MIN_SPEECH_TIME = 800;
 
     const listenStartTime = Date.now();
     let frameId = null;
