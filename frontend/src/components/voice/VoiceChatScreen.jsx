@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ProgressIndicator from '../ProgressIndicator';
 import './VoiceChatScreen.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Rotating greetings
 const GREETINGS = ['Namaste', 'Hello', 'Hola', 'Bonjour', 'Ciao', 'Hej'];

@@ -10,9 +10,10 @@ const SARVAM_BASE_URL = 'https://api.sarvam.ai';
 
 // Model selection - v2.5 is the current stable model
 const DEFAULT_STT_MODEL = process.env.SARVAM_STT_MODEL || 'saarika:v2.5';
-// Valid speakers: shubh, anushka, abhilash, manisha, vidya, arya, karun, etc.
-// bulbul:v3 default is 'shubh'
-const DEFAULT_TTS_VOICE = process.env.SARVAM_TTS_VOICE || 'shubh';
+// Bulbul v3 speakers: aditya, ritu, priya, neha, rahul, pooja, rohan, simran,
+// kavya, amit, dev, ishita, shreya, ratan, varun, manan, sumit, roopa, kabir,
+// aayan, shubh, ashutosh, advait, amelia, sophia
+const DEFAULT_TTS_VOICE = process.env.SARVAM_TTS_VOICE || 'advait';
 
 // TTS cache to avoid regenerating same audio
 const ttsCache = new Map();
@@ -34,7 +35,7 @@ async function speechToText(audioBuffer, options = {}) {
       contentType: 'audio/webm',
     });
     formData.append('model', options.model || DEFAULT_STT_MODEL);
-    formData.append('language_code', options.language || 'en-IN');
+    formData.append('language_code', options.language || 'hi-IN');
 
     const response = await axios.post(
       `${SARVAM_BASE_URL}/speech-to-text`,
@@ -75,7 +76,7 @@ async function textToSpeech(text, options = {}) {
 
   // Create cache key from text + voice + language
   const voice = options.voice || DEFAULT_TTS_VOICE;
-  const language = options.language || 'en-IN';
+  const language = options.language || 'hi-IN';
   const cacheKey = `${language}:${voice}:${text}`;
 
   // Check cache
@@ -83,10 +84,8 @@ async function textToSpeech(text, options = {}) {
     return ttsCache.get(cacheKey);
   }
 
-  // Use bulbul:v2 with v2-compatible speaker
-  // shubh is only available in bulbul:v3, use anushka for bulbul:v2
-  const model = options.model || 'bulbul:v2';
-  const speaker = model === 'bulbul:v2' && voice === 'shubh' ? 'anushka' : voice;
+  const model = options.model || 'bulbul:v3';
+  const speaker = voice;
 
   try {
     const response = await axios.post(
@@ -95,8 +94,9 @@ async function textToSpeech(text, options = {}) {
         text: text,
         target_language_code: language,
         speaker: speaker,
-        pace: options.pace || 1.0,
+        pace: options.pace || 0.9,
         model: model,
+        speech_sample_rate: 22050,
       },
       {
         headers: {
