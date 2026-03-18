@@ -98,6 +98,7 @@ const ChatScreen = () => {
   const [cart, setCart] = useState([]);
   const [cartCount, setCartCount] = useState(0);
   const [cartSessionId, setCartSessionId] = useState(() => sessionStorage.getItem('cart_session_id'));
+  const [showCartModal, setShowCartModal] = useState(false);
 
   // Voice state
   const [voiceMode, setVoiceMode] = useState(false);
@@ -436,6 +437,22 @@ const ChatScreen = () => {
     updateCartState(data);
     return data;
   }, [cartSessionId, updateCartState]);
+
+  const fetchCart = useCallback(async () => {
+    if (!cartSessionId) return;
+    try {
+      const res = await fetch(`/api/cart/${cartSessionId}`);
+      const data = await res.json();
+      updateCartState(data);
+    } catch (err) {
+      console.error('Fetch cart error:', err);
+    }
+  }, [cartSessionId, updateCartState]);
+
+  const handleViewCart = () => {
+    fetchCart();
+    setShowCartModal(true);
+  };
 
   const handleProductTap = (product) => {
     // Show product popup with details and location
@@ -852,6 +869,18 @@ const ChatScreen = () => {
           <ProgressIndicator current={progress} />
         </div>
         <div className="cs-header-right">
+          <button
+            className="cs-cart-btn"
+            onClick={handleViewCart}
+            title="View Cart"
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          </button>
           {speechSupported && synthSupported && (
             <button
               className={`cs-voice-toggle ${voiceMode ? 'active' : ''}`}
@@ -1003,6 +1032,17 @@ const ChatScreen = () => {
           }}
           onAddToCart={addToCart}
           cartCount={cartCount}
+          onViewCart={handleViewCart}
+        />
+      )}
+
+      {/* Cart Modal */}
+      {showCartModal && (
+        <CartModal
+          cart={cart}
+          cartSessionId={cartSessionId}
+          onClose={() => setShowCartModal(false)}
+          onUpdate={updateCartState}
         />
       )}
     </div>
@@ -1010,7 +1050,7 @@ const ChatScreen = () => {
 };
 
 // ===== Product Detail Popup Component =====
-const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAddToCart, cartCount }) => {
+const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAddToCart, cartCount, onViewCart }) => {
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedStorage, setSelectedStorage] = useState(product.default_storage || product.storage_options?.[0]);
   const [addingToCart, setAddingToCart] = useState(false);
@@ -1040,17 +1080,15 @@ const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAd
       <div className="chat-product-popup" onClick={(e) => e.stopPropagation()}>
         <button className="cpp-close" onClick={onClose}>✕</button>
 
-        {/* Cart Badge */}
-        {cartCount > 0 && (
-          <div className="cpp-cart-badge">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 01-8 0"/>
-            </svg>
-            <span>{cartCount}</span>
-          </div>
-        )}
+        {/* Cart Button */}
+        <button className="cpp-cart-button" onClick={onViewCart} title="View Cart">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          {cartCount > 0 && <span className="cpp-cart-badge">{cartCount}</span>}
+        </button>
 
         <div className="cpp-header">
           <h2>{product.brand} {product.model}</h2>
@@ -1227,6 +1265,175 @@ const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAd
           <button className="cpp-btn-secondary" onClick={onClose}>
             Continue Browsing
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===== Cart Modal Component =====
+const CartModal = ({ cart, cartSessionId, onClose, onUpdate }) => {
+  const [updating, setUpdating] = useState({});
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const handleRemove = async (item) => {
+    setUpdating({ [item.id]: true });
+    try {
+      const res = await fetch('/api/cart/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: cartSessionId,
+          productId: item.id,
+          storage: item.storage,
+          color: item.color,
+        })
+      });
+      const data = await res.json();
+      onUpdate(data);
+    } catch (err) {
+      console.error('Remove item error:', err);
+    }
+    setUpdating({});
+  };
+
+  const handleUpdateQty = async (item, newQty) => {
+    if (newQty < 1) {
+      handleRemove(item);
+      return;
+    }
+    setUpdating({ [item.id]: true });
+    try {
+      const res = await fetch('/api/cart/update-qty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: cartSessionId,
+          productId: item.id,
+          storage: item.storage,
+          color: item.color,
+          qty: newQty,
+        })
+      });
+      const data = await res.json();
+      onUpdate(data);
+    } catch (err) {
+      console.error('Update quantity error:', err);
+    }
+    setUpdating({});
+  };
+
+  const total = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+  const savings = cart.reduce((sum, item) => sum + ((item.mrp - item.price) * (item.qty || 1)), 0);
+
+  return (
+    <div className="cart-modal-overlay" onClick={onClose}>
+      <div className="cart-modal" onClick={e => e.stopPropagation()}>
+        <div className="cart-modal-header">
+          <h2>Your Cart ({cart.length} {cart.length === 1 ? 'item' : 'items'})</h2>
+          <button className="cart-close-btn" onClick={onClose}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="cart-items">
+          {cart.length === 0 ? (
+            <div className="cart-empty">
+              <svg width="64" height="64" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              <p>Your cart is empty</p>
+            </div>
+          ) : (
+            <>
+              {cart.map((item, idx) => (
+                <div key={idx} className="cart-item">
+                  <div 
+                    className="cart-item-image" 
+                    style={{ background: item.image_bg || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                  >
+                    <span className="cart-item-brand">{item.brand}</span>
+                  </div>
+                  <div className="cart-item-details">
+                    <h3 className="cart-item-name">{item.name}</h3>
+                    <div className="cart-item-specs">
+                      <span className="cart-item-color">
+                        <span className="color-dot" style={{ background: item.color_hex }}></span>
+                        {item.color}
+                      </span>
+                      {item.storage && <span className="cart-item-storage">{item.storage}GB</span>}
+                    </div>
+                    <div className="cart-item-pricing">
+                      <span className="cart-item-price">{formatCurrency(item.price)}</span>
+                      {item.mrp > item.price && (
+                        <span className="cart-item-mrp">{formatCurrency(item.mrp)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="cart-item-controls">
+                    <div className="cart-item-qty-controls">
+                      <button 
+                        className="qty-btn"
+                        onClick={() => handleUpdateQty(item, (item.qty || 1) - 1)}
+                        disabled={updating[item.id]}
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                      <span className="qty-display">{item.qty || 1}</span>
+                      <button 
+                        className="qty-btn"
+                        onClick={() => handleUpdateQty(item, (item.qty || 1) + 1)}
+                        disabled={updating[item.id]}
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <line x1="12" y1="5" x2="12" y2="19"/>
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="cart-summary">
+                <div className="cart-summary-row">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+                {savings > 0 && (
+                  <div className="cart-summary-row savings">
+                    <span>You Save</span>
+                    <span>-{formatCurrency(savings)}</span>
+                  </div>
+                )}
+                <div className="cart-summary-row total">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
+
+              <div className="cart-actions">
+                <button className="cart-continue-btn" onClick={onClose}>
+                  Continue Shopping
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
