@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import catalogue from '../data/catalogue';
@@ -6,10 +6,14 @@ import './QRCodes.css';
 
 const formatPrice = (p) => `₹${p.toLocaleString('en-IN')}`;
 
+// Rotating greetings (Indian languages in native scripts)
+const GREETINGS = ['Welcome', 'नमस्ते', 'வணக்கம்', 'ನಮಸ್ಕಾರ', 'প্রণাম', 'నమస్కారం', 'नमस्कार', 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ'];
+
 const QRCodes = () => {
   const navigate = useNavigate();
   const [baseUrl] = useState('https://723b-106-51-64-60.ngrok-free.app');
   const [scanning, setScanning] = useState(false);
+  const [greetingIdx, setGreetingIdx] = useState(0);
 
   // Display only the first product
   const product = catalogue[0];
@@ -22,6 +26,14 @@ const QRCodes = () => {
       navigate('/chat');
     }, 1200);
   };
+
+  // Rotate greetings
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreetingIdx(prev => (prev + 1) % GREETINGS.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="qr-page">
@@ -57,7 +69,7 @@ const QRCodes = () => {
       <div className="qr-storefront-content">
         {/* Welcome Section */}
         <div className="qr-welcome-section">
-          <h1 className="qr-main-title">Welcome</h1>
+          <h1 className="qr-main-title" key={greetingIdx}>{GREETINGS[greetingIdx]}</h1>
           <p className="qr-subtitle">Scan the QR Code to Start Shopping</p>
         </div>
 
