@@ -5,8 +5,8 @@ import './VoiceChatScreen.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-// Rotating greetings
-const GREETINGS = ['Namaste', 'Hello', 'Hola', 'Bonjour', 'Ciao', 'Hej'];
+// Rotating greetings (Indian languages in native scripts)
+const GREETINGS = ['Welcome', 'नमस्ते', 'வணக்கம்', 'ನಮಸ್ಕಾರ', 'প্রণাম', 'నమస్కారం', 'नमस्कार', 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ'];
 
 // Audio recorder hook
 function useAudioRecorder() {

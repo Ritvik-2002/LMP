@@ -27,8 +27,8 @@ const formatCurrency = (amount) => {
 
 const API_BASE = '/api/journey';
 
-// Rotating greetings for the welcome screen
-const GREETINGS = ['Namaste', 'Hello', 'Hola', 'Bonjour', 'Ciao', 'Hej'];
+// Rotating greetings for the welcome screen (Indian languages in native scripts)
+const GREETINGS = ['Welcome', 'नमस्ते', 'வணக்கம்', 'ನಮಸ್ಕಾರ', 'প্রণাম', 'నమస్కారం', 'नमस्कार', 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ'];
 
 const CATEGORIES = [
   { id: 'smartphones', label: 'Smartphones', desc: 'Flagships & budget picks', available: true },
