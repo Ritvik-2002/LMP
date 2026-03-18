@@ -1102,30 +1102,42 @@ const ProductDetailPopup = ({ product, onClose, onExploreEMI, onProductTap, onAd
         <div className="cpp-section">
           <h4>Key Specifications</h4>
           <div className="cpp-specs-grid">
-            <div className="cpp-spec">
-              <span className="spec-label">Display</span>
-              <span className="spec-value">{product.display.size_inch}" {product.display.type}</span>
-            </div>
-            <div className="cpp-spec">
-              <span className="spec-label">Processor</span>
-              <span className="spec-value">{product.hardware.chipset}</span>
-            </div>
-            <div className="cpp-spec">
-              <span className="spec-label">RAM</span>
-              <span className="spec-value">{product.hardware.ram_gb} GB</span>
-            </div>
-            <div className="cpp-spec">
-              <span className="spec-label">Storage</span>
-              <span className="spec-value">{selectedStorage} GB</span>
-            </div>
-            <div className="cpp-spec">
-              <span className="spec-label">Battery</span>
-              <span className="spec-value">{product.hardware.battery_mah} mAh</span>
-            </div>
-            <div className="cpp-spec">
-              <span className="spec-label">Camera</span>
-              <span className="spec-value">{product.camera}</span>
-            </div>
+            {product.display && (
+              <div className="cpp-spec">
+                <span className="spec-label">Display</span>
+                <span className="spec-value">{product.display.size_inch}" {product.display.type}</span>
+              </div>
+            )}
+            {product.hardware?.chipset && (
+              <div className="cpp-spec">
+                <span className="spec-label">Processor</span>
+                <span className="spec-value">{product.hardware.chipset}</span>
+              </div>
+            )}
+            {product.hardware?.ram_gb && (
+              <div className="cpp-spec">
+                <span className="spec-label">RAM</span>
+                <span className="spec-value">{product.hardware.ram_gb} GB</span>
+              </div>
+            )}
+            {selectedStorage && (
+              <div className="cpp-spec">
+                <span className="spec-label">Storage</span>
+                <span className="spec-value">{selectedStorage} GB</span>
+              </div>
+            )}
+            {product.hardware?.battery_mah && (
+              <div className="cpp-spec">
+                <span className="spec-label">Battery</span>
+                <span className="spec-value">{product.hardware.battery_mah} mAh</span>
+              </div>
+            )}
+            {product.camera && (
+              <div className="cpp-spec">
+                <span className="spec-label">Camera</span>
+                <span className="spec-value">{product.camera}</span>
+              </div>
+            )}
           </div>
         </div>
 
