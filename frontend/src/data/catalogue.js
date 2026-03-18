@@ -632,11 +632,34 @@ export const laptopCatalogue = [
     price: 119900,
     mrp: 119900,
     colors: [
-      { name: 'Midnight', hex: '#1d1d2c' },
-      { name: 'Starlight', hex: '#f0e6d3' },
-      { name: 'Silver', hex: '#d1d1d6' },
-      { name: 'Space Gray', hex: '#7d7e80' },
+      { name: 'Midnight', hex: '#1d1d2c', image_bg: 'linear-gradient(135deg, #1d1d2c, #0f0f16)' },
+      { name: 'Starlight', hex: '#f0e6d3', image_bg: 'linear-gradient(135deg, #f0e6d3, #e0d5c0)' },
+      { name: 'Silver', hex: '#d1d1d6', image_bg: 'linear-gradient(135deg, #d1d1d6, #b8b8bd)' },
+      { name: 'Space Gray', hex: '#7d7e80', image_bg: 'linear-gradient(135deg, #7d7e80, #5d5e60)' },
     ],
+    storage_options: [256, 512, 1024],
+    default_storage: 512,
+    hardware: {
+      chipset: 'Apple M4',
+      cpu: '10-core CPU',
+      gpu: '10-core GPU',
+      ram_gb: 16,
+      battery_mah: 52600,
+    },
+    display: {
+      type: 'Liquid Retina',
+      size_inch: 13.6,
+      resolution: '2560 x 1664',
+      refresh_rate_hz: 60,
+    },
+    camera: '1080p FaceTime HD',
+    location: {
+      floor: 'First Floor',
+      section: 'Computing Zone',
+      aisle: 'B2',
+      shelf: 'Shelf 3',
+      shelfLabel: 'MacBooks'
+    },
     highlights: ['M4 chip', '18hr battery', 'Liquid Retina'],
   },
   {
@@ -647,9 +670,32 @@ export const laptopCatalogue = [
     price: 149990,
     mrp: 169990,
     colors: [
-      { name: 'Platinum', hex: '#c0c0c0' },
-      { name: 'Graphite', hex: '#4a4a4a' },
+      { name: 'Platinum', hex: '#c0c0c0', image_bg: 'linear-gradient(135deg, #c0c0c0, #a8a8a8)' },
+      { name: 'Graphite', hex: '#4a4a4a', image_bg: 'linear-gradient(135deg, #4a4a4a, #2a2a2a)' },
     ],
+    storage_options: [512, 1024, 2048],
+    default_storage: 1024,
+    hardware: {
+      chipset: 'Intel Core Ultra 9',
+      cpu: '16-core (6P+8E+2LPE)',
+      gpu: 'NVIDIA RTX 4070 8GB',
+      ram_gb: 32,
+      battery_mah: 99500,
+    },
+    display: {
+      type: 'OLED InfinityEdge',
+      size_inch: 16.3,
+      resolution: '3840 x 2400 (4K+)',
+      refresh_rate_hz: 90,
+    },
+    camera: '1080p Full HD',
+    location: {
+      floor: 'First Floor',
+      section: 'Computing Zone',
+      aisle: 'B3',
+      shelf: 'Shelf 2',
+      shelfLabel: 'Creator Laptops'
+    },
     highlights: ['Intel Ultra 9', 'OLED 4K touch', '32GB RAM'],
   },
   {
@@ -660,9 +706,32 @@ export const laptopCatalogue = [
     price: 134990,
     mrp: 149990,
     colors: [
-      { name: 'Nightfall Black', hex: '#1a1a2e' },
-      { name: 'Nocturne Blue', hex: '#1b3a5c' },
+      { name: 'Nightfall Black', hex: '#1a1a2e', image_bg: 'linear-gradient(135deg, #1a1a2e, #0f0f1a)' },
+      { name: 'Nocturne Blue', hex: '#1b3a5c', image_bg: 'linear-gradient(135deg, #1b3a5c, #0f1f3a)' },
     ],
+    storage_options: [512, 1024],
+    default_storage: 512,
+    hardware: {
+      chipset: 'Intel Core Ultra 7',
+      cpu: '14-core (6P+8E)',
+      gpu: 'Intel Arc Graphics',
+      ram_gb: 16,
+      battery_mah: 68000,
+    },
+    display: {
+      type: 'OLED Touchscreen',
+      size_inch: 16,
+      resolution: '3072 x 1920 (3K)',
+      refresh_rate_hz: 120,
+    },
+    camera: '5MP IR Camera',
+    location: {
+      floor: 'First Floor',
+      section: 'Computing Zone',
+      aisle: 'B3',
+      shelf: 'Shelf 1',
+      shelfLabel: '2-in-1 Laptops'
+    },
     highlights: ['2-in-1 convertible', '3K OLED', 'Intel Core Ultra 7'],
   },
   {
@@ -673,8 +742,31 @@ export const laptopCatalogue = [
     price: 164990,
     mrp: 179990,
     colors: [
-      { name: 'Black', hex: '#1a1a1a' },
+      { name: 'Black', hex: '#1a1a1a', image_bg: 'linear-gradient(135deg, #1a1a1a, #0a0a0a)' },
     ],
+    storage_options: [512, 1024],
+    default_storage: 512,
+    hardware: {
+      chipset: 'Intel Core Ultra 7',
+      cpu: '14-core vPro',
+      gpu: 'Intel Iris Xe',
+      ram_gb: 32,
+      battery_mah: 57000,
+    },
+    display: {
+      type: 'OLED',
+      size_inch: 14,
+      resolution: '2880 x 1800 (2.8K)',
+      refresh_rate_hz: 60,
+    },
+    camera: '1080p + IR',
+    location: {
+      floor: 'First Floor',
+      section: 'Computing Zone',
+      aisle: 'B4',
+      shelf: 'Shelf 1',
+      shelfLabel: 'Business Laptops'
+    },
     highlights: ['1.08kg ultralight', 'MIL-STD tested', '14" 2.8K OLED'],
   },
   {
@@ -685,9 +777,32 @@ export const laptopCatalogue = [
     price: 79990,
     mrp: 94990,
     colors: [
-      { name: 'Ponder Blue', hex: '#2b4570' },
-      { name: 'Jasper Gray', hex: '#7a7a7a' },
+      { name: 'Ponder Blue', hex: '#2b4570', image_bg: 'linear-gradient(135deg, #2b4570, #1a2d4a)' },
+      { name: 'Jasper Gray', hex: '#7a7a7a', image_bg: 'linear-gradient(135deg, #7a7a7a, #5a5a5a)' },
     ],
+    storage_options: [512, 1024],
+    default_storage: 512,
+    hardware: {
+      chipset: 'AMD Ryzen 7 8840HS',
+      cpu: '8-core/16-thread',
+      gpu: 'AMD Radeon 780M',
+      ram_gb: 16,
+      battery_mah: 75000,
+    },
+    display: {
+      type: 'OLED',
+      size_inch: 14,
+      resolution: '2880 x 1800 (2.8K)',
+      refresh_rate_hz: 120,
+    },
+    camera: 'Full HD IR Camera',
+    location: {
+      floor: 'First Floor',
+      section: 'Computing Zone',
+      aisle: 'B2',
+      shelf: 'Shelf 4',
+      shelfLabel: 'Ultrabooks'
+    },
     highlights: ['AMD Ryzen 7', '14" 2.8K OLED', '1.2kg light'],
   },
 ];
