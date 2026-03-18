@@ -444,7 +444,7 @@ const ChatScreen = () => {
   };
 
   const handleExploreEMI = () => {
-    // Close popup and start EMI journey
+    // Close popup and start EMI journey directly
     setShowProductPopup(false);
     const product = popupProduct;
     setPopupProduct(null);
@@ -452,26 +452,9 @@ const ChatScreen = () => {
     if (!product) return;
 
     setSelectedProduct(product);
-
-    const price = new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', minimumFractionDigits: 0,
-    }).format(product.price);
-
-    setMessages(prev => [...prev,
-      { role: 'user', content: `${product.brand} ${product.model}`, timestamp: Date.now() },
-    ]);
-
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `${product.brand} ${product.model} — ${price}`,
-        richCards: [
-          { type: 'product_detail', product },
-          { type: 'suggestion_chips', suggestions: ['Explore EMI options', 'Back to browsing'] },
-        ],
-        timestamp: Date.now(),
-      }]);
-    }, 200);
+    setBrowseCategory(null);
+    browseCategoryRef.current = null;
+    sendMessage(`I want to buy the ${product.brand} ${product.model} on EMI`);
   };
 
   const handleCategoryTap = (category) => {
