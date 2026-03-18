@@ -525,10 +525,13 @@ exports.processMessage = async (req, res) => {
     }
 
     // 3. Detect product mention
-    if (session.journeyState === 'category_browsing' || session.journeyState === 'product_selected') {
+    if (session.journeyState === 'welcome' || session.journeyState === 'category_selection' || session.journeyState === 'category_browsing' || session.journeyState === 'product_selected') {
       const product = detectProductMention(message);
       if (product) {
         session.selectedProduct = { id: product.id, brand: product.brand, model: product.model, price: product.price };
+        if (!session.selectedCategory && product.category) {
+          session.selectedCategory = product.category;
+        }
         session.journeyState = 'product_selected';
       }
     }
