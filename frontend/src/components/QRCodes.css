@@ -1,7 +1,7 @@
 /* ===== QR Page ===== */
 .qr-page {
   min-height: 100vh;
-  background: #0f0f1a;
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -34,7 +34,7 @@
 }
 
 .qr-nav-logo {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #12DAA8, #0A9A78);
   -webkit-background-clip: text;
@@ -48,19 +48,6 @@
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-}
-
-.qr-nav-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.qr-product-counter {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.4);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .qr-print-btn {
@@ -80,191 +67,213 @@
   color: white;
 }
 
-/* ===== Hero ===== */
-.qr-hero {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 24px 24px;
-  text-align: center;
-}
-
-.qr-hero-title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 0 0 10px;
-  background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.qr-hero-desc {
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.5);
-  margin: 0 0 12px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.qr-hero-demo {
-  display: inline-block;
-  font-size: 0.72rem;
-  color: #12DAA8;
-  background: rgba(18, 218, 168, 0.08);
-  border: 1px solid rgba(18, 218, 168, 0.2);
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-
-/* ===== Single Product Layout ===== */
-.qr-single-wrapper {
+/* ===== Storefront Content ===== */
+.qr-storefront-content {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 24px;
-  max-width: 600px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.qr-arrow {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.qr-arrow:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
-  border-color: rgba(255,255,255,0.2);
-}
-
-/* ===== Card ===== */
-.qr-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  flex: 1;
-}
-
-.qr-card:hover {
-  border-color: rgba(18, 218, 168, 0.3);
-  background: rgba(255,255,255,0.06);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(18, 218, 168, 0.1);
-}
-
-.qr-card.scanning {
-  border-color: #12DAA8;
-  box-shadow: 0 0 40px rgba(18, 218, 168, 0.3);
-  animation: cardPulse 0.6s ease infinite alternate;
-}
-
-@keyframes cardPulse {
-  from { box-shadow: 0 0 20px rgba(18, 218, 168, 0.2); }
-  to { box-shadow: 0 0 40px rgba(18, 218, 168, 0.4); }
-}
-
-.qr-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 20px 24px 14px;
-}
-
-.qr-card-header h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 4px;
-}
-
-.qr-card-specs {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.35);
-}
-
-.qr-card-pricing {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.qr-card-price {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: white;
-  display: block;
-}
-
-.qr-card-discount {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #12DAA8;
-}
-
-/* QR Code */
-.qr-code-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  gap: 12px;
-}
-
-.qr-code-container svg {
-  border-radius: 8px;
-}
-
-.qr-scan-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.3);
-}
-
-/* Features */
-.qr-card-features {
-  display: flex;
-  gap: 6px;
-  padding: 0 24px 20px;
-  flex-wrap: wrap;
   justify-content: center;
+  padding: 40px 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 40px;
 }
 
-.qr-feature-tag {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: rgba(18, 218, 168, 0.8);
-  background: rgba(18, 218, 168, 0.08);
-  border: 1px solid rgba(18, 218, 168, 0.15);
-  padding: 3px 10px;
+/* ===== Welcome Section ===== */
+.qr-welcome-section {
+  text-align: center;
+  animation: fadeInUp 0.6s ease;
+}
+
+.qr-main-title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  margin: 0 0 16px;
+  background: linear-gradient(135deg, #fff, rgba(255,255,255,0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+.qr-subtitle {
+  font-size: 1.4rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== QR Display Card ===== */
+.qr-display-card {
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  padding: 50px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: fadeInScale 0.6s ease 0.2s backwards;
+}
+
+.qr-display-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 30px 80px rgba(18, 218, 168, 0.3);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Scan Corners ===== */
+.qr-scan-corners {
+  position: absolute;
+  inset: 16px;
+  pointer-events: none;
+}
+
+.qr-scan-corners .corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #12DAA8;
+  opacity: 0.6;
+}
+
+.qr-scan-corners .corner.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 8px 0 0 0;
+}
+
+.qr-scan-corners .corner.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 8px 0 0;
+}
+
+.qr-scan-corners .corner.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 8px;
+}
+
+.qr-scan-corners .corner.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 8px 0;
+}
+
+/* ===== QR Code ===== */
+.qr-code-large {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.qr-code-large svg {
   border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Scan Instruction ===== */
+.qr-scan-instruction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #0f0f1a;
+}
+
+.qr-scan-instruction svg {
+  color: #12DAA8;
+  animation: phoneFloat 2s ease-in-out infinite;
+}
+
+.qr-scan-instruction p {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f0f1a;
+}
+
+@keyframes phoneFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* ===== Benefits Section ===== */
+.qr-benefits {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeInUp 0.6s ease 0.4s backwards;
+}
+
+.qr-benefit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.7);
+  transition: all 0.3s ease;
+}
+
+.qr-benefit-item:hover {
+  color: white;
+  transform: translateY(-4px);
+}
+
+.qr-benefit-item svg {
+  color: #12DAA8;
+  width: 32px;
+  height: 32px;
+}
+
+.qr-benefit-item span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 /* ===== Scan Overlay ===== */
 .scan-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -281,45 +290,50 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   text-align: center;
 }
 
 .scan-phone {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   background: linear-gradient(135deg, #12DAA8, #0A9A78);
-  border-radius: 20px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: phoneBounce 0.6s ease infinite alternate;
+  box-shadow: 0 8px 32px rgba(18, 218, 168, 0.4);
 }
 
 @keyframes phoneBounce {
   from { transform: scale(1); }
-  to { transform: scale(1.08); }
+  to { transform: scale(1.1); }
 }
 
 .scan-beam {
-  width: 200px;
-  height: 3px;
+  width: 100px;
+  height: 2px;
   background: linear-gradient(90deg, transparent, #12DAA8, transparent);
-  border-radius: 2px;
-  animation: beamSweep 0.8s ease-in-out infinite;
+  animation: scanBeam 1.5s ease infinite;
 }
 
-@keyframes beamSweep {
-  0% { opacity: 0.3; transform: scaleX(0.5); }
+@keyframes scanBeam {
+  0%, 100% { opacity: 0.3; transform: scaleX(0.5);  }
   50% { opacity: 1; transform: scaleX(1); }
-  100% { opacity: 0.3; transform: scaleX(0.5); }
 }
 
 .scan-text {
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.7);
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
   margin: 0;
+  animation: textPulse 1s ease infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 /* ===== Footer ===== */
@@ -327,256 +341,104 @@
   text-align: center;
   padding: 24px;
   border-top: 1px solid rgba(255,255,255,0.06);
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.3);
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+  animation: fadeInUp 0.6s ease 0.6s backwards;
 }
 
 .qr-footer strong {
   color: #12DAA8;
 }
 
-/* ===== Print ===== */
-@media print {
-  .qr-nav, .qr-hero, .qr-footer, .qr-scan-hint, .qr-hero-demo, .qr-arrow { display: none !important; }
-  .qr-page { background: white; color: black; }
-  .qr-single-wrapper { padding: 16px; }
-  .qr-card { border: 2px solid #000; background: white; }
-  .qr-card-header h3 { color: black; }
-  .qr-card-price { color: black; }
-  .qr-card-specs { color: #666; }
-  .qr-card-discount { color: #16a34a; }
-  .qr-feature-tag { color: #0A9A78; border-color: #0A9A78; background: white; }
-}
-
-/* ===== Product Popup ===== */
-.product-popup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-.product-popup {
-  background: #1a1a2e;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-  max-width: 480px;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  position: relative;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.popup-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.6);
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.popup-close:hover {
-  background: rgba(255,255,255,0.12);
-  color: white;
-}
-
-.popup-header {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.popup-header h2 {
-  margin: 0 0 6px;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: white;
-}
-
-.popup-device-code {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
-  font-family: monospace;
-}
-
-.popup-price-row {
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.popup-price {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #12DAA8;
-}
-
-.popup-mrp {
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.4);
-  text-decoration: line-through;
-}
-
-.popup-discount {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #12DAA8;
-  background: rgba(18, 218, 168, 0.1);
-  padding: 3px 10px;
-  border-radius: 12px;
-}
-
-.popup-section {
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.popup-section:last-of-type {
-  border-bottom: none;
-}
-
-.popup-section h4 {
-  margin: 0 0 14px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.popup-specs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.popup-spec {
-  background: rgba(255,255,255,0.04);
-  padding: 12px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.spec-label {
-  font-size: 0.65rem;
-  color: rgba(255,255,255,0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.spec-value {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.9);
-  font-weight: 500;
-}
-
-.location-card {
-  display: flex;
-  gap: 16px;
-  background: rgba(18, 218, 168, 0.08);
-  border: 1px solid rgba(18, 218, 168, 0.15);
-  padding: 16px;
-  border-radius: 12px;
-}
-
-.location-icon {
-  width: 48px;
-  height: 48px;
-  background: rgba(18, 218, 168, 0.15);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #12DAA8;
-  flex-shrink: 0;
-}
-
-.location-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.location-floor {
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-}
-
-.location-section {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.7);
-}
-
-.location-aisle {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.5);
-  margin-top: 4px;
-}
-
-.location-label {
-  font-size: 0.7rem;
-  color: #12DAA8;
-  font-weight: 600;
-  margin-top: 4px;
-  padding: 2px 8px;
-  background: rgba(18, 218, 168, 0.1);
-  border-radius: 6px;
-  display: inline-block;
-  align-self: flex-start;
-}
-
-.popup-actions {
-  padding: 16px 24px 24px;
-}
-
-.popup-btn-view {
-  width: 100%;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #12DAA8, #0A9A78);
-  color: #0f0f1a;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.popup-btn-view:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(18, 218, 168, 0.3);
-}
-
-/* ===== Responsive ===== */
+/* ===== Responsive - Tablet ===== */
 @media (max-width: 768px) {
-  .qr-hero-title { font-size: 1.5rem; }
-  .qr-single-wrapper { gap: 12px; padding: 16px; }
-  .qr-arrow { width: 36px; height: 36px; }
-  .product-popup { max-height: 90vh; }
-  .popup-specs-grid { grid-template-columns: 1fr; }
+  .qr-main-title {
+    font-size: 2.5rem;
+  }
+  
+  .qr-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .qr-display-card {
+    padding: 40px;
+  }
+  
+  .qr-code-large svg {
+    width: 280px !important;
+    height: 280px !important;
+  }
+  
+  .qr-benefits {
+    gap: 30px;
+  }
+}
+
+/* ===== Responsive - Mobile ===== */
+@media (max-width: 480px) {
+  .qr-storefront-content {
+    padding: 24px 16px;
+    gap: 32px;
+  }
+  
+  .qr-main-title {
+    font-size: 2rem;
+  }
+  
+  .qr-subtitle {
+    font-size: 1rem;
+  }
+  
+  .qr-display-card {
+    padding: 30px;
+  }
+  
+  .qr-code-large svg {
+    width: 240px !important;
+    height: 240px !important;
+  }
+  
+  .qr-scan-instruction p {
+    font-size: 1rem;
+  }
+  
+  .qr-benefits {
+    gap: 24px;
+  }
+  
+  .qr-benefit-item svg {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .qr-benefit-item span {
+    font-size: 0.85rem;
+  }
+}
+
+/* ===== Print Styles ===== */
+@media print {
+  .qr-nav, .qr-footer, .scan-overlay { 
+    display: none !important; 
+  }
+  
+  .qr-page { 
+    background: white; 
+  }
+  
+  .qr-storefront-content {
+    padding: 20px;
+  }
+  
+  .qr-main-title,
+  .qr-subtitle,
+  .qr-scan-instruction,
+  .qr-benefits {
+    color: black !important;
+  }
+  
+  .qr-display-card {
+    box-shadow: none;
+    border: 2px solid #000;
+  }
 }
